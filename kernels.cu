@@ -8,8 +8,7 @@
 #define WARP_SIZE 32
 #define WARP_LEADER 0
 
-__inline__ __device__
-int reduceWithinWarp(int val) {
+__inline__ __device__ int reduceWithinWarp(int val) {
   for (int mask = WARP_SIZE/2; mask > 0; mask /= 2)
     val += __shfl_xor(val, mask);
   return val;
@@ -45,7 +44,7 @@ __global__ void compressData(int* data, int* output){
 	// exchange word information within the warp
 	zeros = reduceWithinWarp(zeros);
 	ones = reduceWithinWarp(ones);
-	literals = not (zeros | ones);
+	literals = ~(zeros | ones);
 
 	// send complete information to other threads
 	if(threadIdx.x == WARP_LEADER){

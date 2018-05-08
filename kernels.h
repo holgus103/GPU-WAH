@@ -9,7 +9,7 @@
 #define KERNELS_H_
 
 
-void compressData(int*, int*);
+__global__ void compressData(int* data_gpu, int* compressed_gpu);
 
 
 #endif /* KERNELS_H_ */

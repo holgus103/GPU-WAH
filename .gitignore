@@ -3,3 +3,8 @@ Debug/
 .cproject
 .project
 .settings/
+.vs/
+*.TMP
+*.db
+*.opendb
+*.pdb

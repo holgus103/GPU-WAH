@@ -6,15 +6,16 @@
  */
 #include "compress.h"
 #include "kernels.h"
-#include <cuda.h>
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 #include <math.h>
-#include <cuda_device_runtime_api.h>
+#include <stdlib.h>  
 
 int* compress(int* data_cpu, int dataSize){
-	int * data_gpu, compressed_gpu;
+	int* data_gpu,* compressed_gpu;
 
 	// allocate memory for results
-	int * compressed_cpu = malloc(sizeof(int)*dataSize);
+	int* compressed_cpu = (int*)malloc(sizeof(int)*dataSize);
 
 	// calculate max output size (one extra bit for every 31 bits)
 	long long maxExpectedSize = 8*sizeof(int)*dataSize;
@@ -30,13 +31,17 @@ int* compress(int* data_cpu, int dataSize){
 	cudaMalloc((void**)&compressed_gpu, maxExpectedSize * sizeof(int));
 
 	// copy input
-	cudaMemcpy(data_gpu, data, dataSize*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(data_gpu, data_gpu, dataSize*sizeof(int), cudaMemcpyHostToDevice);
 
 	// call compression kernel
 	compressData<<<1,1>>>(data_gpu, compressed_gpu);
 
 	// copy compressed data
-	cudaMemcpy(compressed_cpu, compressed_gpu, maxExpectedSize * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy((void*)compressed_cpu, (void*)compressed_gpu, maxExpectedSize * sizeof(int), cudaMemcpyDeviceToHost);
+	
+	// free gpu memory
+	cudaFree((void*)data_gpu);
+	cudaFree((void*)compressed_gpu);
 
 	return compressed_cpu;
 }
