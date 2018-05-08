@@ -108,6 +108,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_60,sm_60</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -157,11 +158,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="compress.cu" />
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="kernels.cu" />
-    <CudaCompile Include="Source.cu" />
+    <CudaCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="compress.h" />
     <ClInclude Include="kernels.h" />
+    <ClInclude Include="Tests.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
