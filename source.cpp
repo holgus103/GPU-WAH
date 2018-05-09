@@ -1,7 +1,7 @@
 
 #include "compress.h"
 #include <stdlib.h>
-#include "Tests.h"
+#include "tests.h"
 
 int main()
 {

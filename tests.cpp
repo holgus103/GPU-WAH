@@ -1,7 +1,7 @@
 
 
 #define ASSERT(RES, EX)	\
-for (auto i = 0; i < 32; i++) { \
+for (int i = 0; i < 32; i++) { \
 	if (RES[i] != EX[i]) { \
 		std::cout << "Error at " << i << std::endl; \
 		return false; \
@@ -25,7 +25,7 @@ bool divideIntoWordsTest()
 
 	int expected[32];
 	expected[0] = 0x7FFFFFFF & data[0];
-	for (auto i = 1; i < 32; i++){
+	for (int i = 1; i < 32; i++){
 		expected[i] = 0x7FFFFFFF & (data[i] << i) | data[i - 1] >> (32 - i);
 	}
 
@@ -52,7 +52,7 @@ bool extendDataTest() {
 	expected[1] = ONES31 | BIT31;
 	expected[2] = ONES31 | BIT31;
 	expected[4] = ONES31 | BIT31;
-	for (auto i = 5; i < 32; i++) {
+	for (int i = 5; i < 32; i++) {
 		expected[i] = BIT31;
 	}
 

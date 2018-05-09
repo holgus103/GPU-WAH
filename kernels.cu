@@ -26,7 +26,7 @@ __inline__ __device__ int countOnes(int x) {
 
 
 
-__global__ void compressData(int* data, int* output, int* warpInfo) {
+__global__ void compressData(int* data, int* output) {
 	// get thread id
 	int id = threadIdx.x;
 	int word = 0;
@@ -90,7 +90,7 @@ __global__ void compressData(int* data, int* output, int* warpInfo) {
 
 	// calculate the number of words within a block
 	if (!idle) {
-		for (auto i = id-1; i > 0; i--) {
+		for (int i = id-1; i > 0; i--) {
 			if ((flags & (1 << i)) > 0) {
 				break;
 			}
@@ -98,9 +98,6 @@ __global__ void compressData(int* data, int* output, int* warpInfo) {
 		}
 	}
 
-	if (id == WARP_LEADER) {
-		warpInfo[blockIdx.x] = flags;
-	}
 	if (word == ONES31) {
 		word = BIT31 | blockSize;
 	}
