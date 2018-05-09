@@ -7,7 +7,10 @@ int main()
 {
 
 #ifdef WORD_DIVISION_TEST
-	testDivideIntoWordsTest();
+	divideIntoWordsTest();
 #endif // WORD_DIVISION_TEST
+#ifdef EXTENSION_TEST
+	extendDataTest();
+#endif
 	return 0;
 }

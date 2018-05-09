@@ -158,15 +158,16 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="compress.cu" />
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="kernels.cu" />
-    <CudaCompile Include="Source.cpp" />
+    <CudaCompile Include="source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="compress.h" />
+    <ClInclude Include="const.h" />
     <ClInclude Include="kernels.h" />
-    <ClInclude Include="Tests.h" />
+    <ClInclude Include="tests.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Tests.cpp" />
+    <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
