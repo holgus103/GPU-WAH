@@ -9,6 +9,6 @@
 
 
 
-int* compress(int* data, int dataSize);
+unsigned int* compress(unsigned int* data,unsigned int dataSize);
 
 #endif /* COMPRESS_H_ */

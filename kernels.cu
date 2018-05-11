@@ -9,27 +9,27 @@
 
 
 
-__inline__ __device__ int reduceWithinWarp(int val) {
+__inline__ __device__ int orWithinWarp(int val) {
   for (int mask = WARP_SIZE/2; mask > 0; mask /= 2)
-    val += __shfl_xor(val, mask);
+    val |= __shfl_xor(val, mask);
   return val;
 }
 
-__inline__ __device__ int countOnes(int x) {
-	x = x - ((x >> 1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-	x = (x + (x >> 4)) & 0x0f0f0f0f;
-	x = x + (x >> 8);
-	x = x + (x >> 16);
-	return x & 0x0000003f;
-}
+//__inline__ __device__ int countOnes(int x) {
+//	x = x - ((x >> 1) & 0x55555555);
+//	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+//	x = (x + (x >> 4)) & 0x0f0f0f0f;
+//	x = x + (x >> 8);
+//	x = x + (x >> 16);
+//	return x & 0x0000003f;
+//}
 
 
 
-__global__ void compressData(int* data, int* output) {
+__global__ void compressData(unsigned int* data, unsigned int* output) {
 	// get thread id
 	int id = threadIdx.x;
-	int word = 0;
+	unsigned int word = 0;
 	// retrieve word, only first 31 threads
 	if (id < WARP_SIZE - 1) {
 		word = data[id];
@@ -38,7 +38,7 @@ __global__ void compressData(int* data, int* output) {
 	// gets 31 - id bits from one lane above
 	// and id bits from own lane
 	//word = (__shfl_down(word, 1) & (ONES31 >> id)) << id | (word & TOP31ONES) >> (32 - id);
-	word = ONES31 & (__shfl_up(word, 1) >> (32 - id) | word << id);
+	word = ONES31 & ((__shfl_up(word, 1) >> (32 - id)) | (word << id));
 #ifndef WORD_DIVISION_TEST
 
 
@@ -50,7 +50,7 @@ __global__ void compressData(int* data, int* output) {
 	// detect words with zeros and words with ones
 	// is a zero fill word
 	if (word == ZEROS) {
-		zeros |= 1 << threadIdx.x;
+		zeros |= 1 << id;
 	}
 
 	// is a one fill word
@@ -59,8 +59,8 @@ __global__ void compressData(int* data, int* output) {
 	}
 
 	// exchange word information within the warp
-	zeros = reduceWithinWarp(zeros);
-	ones = reduceWithinWarp(ones);
+	zeros = orWithinWarp(zeros);
+	ones = orWithinWarp(ones);
 	literals = ~(zeros | ones);
 
 #ifndef EXTENSION_TEST
@@ -78,16 +78,21 @@ __global__ void compressData(int* data, int* output) {
 	bool idle = true;
 	// if is not last
 	if (id < 31) {
-		if (((n & zeros) > 0 || (n & ones) > 0 || (literals & (1 << id)) > 0)) {
+		int res = 1 << id;
+		if (((n & zeros) == res || (n & ones) == res || (literals & (1 << id)) > 0)) {
 			// mark endings
 			flags |= 1 << id;
 			idle = false;
 		}
 	}
+	else{
+		idle = false;
+	}
 	// exchange endings 
-	flags = reduceWithinWarp(flags);
+	flags = orWithinWarp(flags);
 	int blockSize = 1;
 
+	int index = __popc(((1<<id) - 1) & flags);
 	// calculate the number of words within a block
 	if (!idle) {
 		for (int i = id-1; i > 0; i--) {
@@ -96,20 +101,20 @@ __global__ void compressData(int* data, int* output) {
 			}
 			blockSize++;
 		}
+		if (word == ONES31) {
+			word = BIT3130 | blockSize;
+		}
+		else if (word == ZEROS) {
+			word = BIT31 | blockSize;
+		}
+		output[index] = word;
 	}
 
-	if (word == ONES31) {
-		word = BIT31 | blockSize;
-	}
-	else if (word == ZEROS) {
-		word = BIT3130 | blockSize;
-	}
 #endif // !EXTENSION_TEST
 
 
 
 #endif // !WORD_DIVISION_TEST
-	output[id] = word;
 }
 
 

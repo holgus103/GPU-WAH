@@ -11,8 +11,8 @@
 #include <math.h>
 #include <stdlib.h>  
 
-int* compress(int* data_cpu, int dataSize){
-	int* data_gpu,* compressed_gpu;
+unsigned int* compress(unsigned int* data_cpu, unsigned int dataSize){
+	unsigned int* data_gpu,* compressed_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
 	long long maxExpectedSize = 8*sizeof(int)*dataSize;
@@ -24,7 +24,7 @@ int* compress(int* data_cpu, int dataSize){
 	maxExpectedSize++;
 
 	// allocate memory for results
-	int* compressed_cpu = (int*)malloc(sizeof(int)*maxExpectedSize);
+	unsigned int* compressed_cpu = (unsigned int*)malloc(sizeof(int)*maxExpectedSize);
 	// allocate memory on the device
 	cudaMalloc((void**)&data_gpu, dataSize * sizeof(int));
 	cudaMalloc((void**)&compressed_gpu, maxExpectedSize * sizeof(int));

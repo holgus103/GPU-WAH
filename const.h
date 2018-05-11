@@ -2,6 +2,7 @@
 
 #define ZEROS 0
 #define ONES31 0x7FFFFFFF
+#define ONES 0xFFFFFFFF
 #define TOP31ONES 0xFFFFFFFE
 #define WARP_SIZE 32
 #define WARP_LEADER 0
