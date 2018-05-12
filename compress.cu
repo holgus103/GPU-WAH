@@ -22,7 +22,7 @@ unsigned int* compress(unsigned int* data_cpu, unsigned int dataSize){
 
 	// increment in case it got rounded
 	maxExpectedSize++;
-
+	dim3 dimBlock(32, dataSize/31);
 	// allocate memory for results
 	unsigned int* compressed_cpu = (unsigned int*)malloc(sizeof(int)*maxExpectedSize);
 	// allocate memory on the device
@@ -33,7 +33,7 @@ unsigned int* compress(unsigned int* data_cpu, unsigned int dataSize){
 	cudaMemcpy(data_gpu, data_cpu, dataSize*sizeof(int), cudaMemcpyHostToDevice);
 
 	// call compression kernel
-	compressData<<<1,32>>>(data_gpu, compressed_gpu);
+	compressData<<<1,dimBlock>>>(data_gpu, compressed_gpu);
 
 	// copy compressed data
 	cudaMemcpy((void*)compressed_cpu, (void*)compressed_gpu, maxExpectedSize * sizeof(int), cudaMemcpyDeviceToHost);

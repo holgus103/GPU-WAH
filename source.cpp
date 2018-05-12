@@ -5,6 +5,6 @@
 
 int main()
 {
-	warpCompressionTest();
+	blockCompressionTest();
 	return 0;
 }

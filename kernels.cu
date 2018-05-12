@@ -7,13 +7,29 @@
 #include <stdio.h>
 #include "const.h"
 
+#define WARP_OPERATION_DOWN(OP, NAME) \
+__inline__ __device__ int NAME(int val){ \
+	for (int mask = WARP_SIZE/2; mask > 0; mask /= 2)\
+		val OP __shfl_xor(val, mask);\
+	return val; \
+}\
 
 
-__inline__ __device__ int orWithinWarp(int val) {
-  for (int mask = WARP_SIZE/2; mask > 0; mask /= 2)
-    val |= __shfl_xor(val, mask);
-  return val;
-}
+
+WARP_OPERATION_DOWN(|=, orWithinWarp);
+
+WARP_OPERATION_DOWN(+=, sumWithinWarp);
+
+
+//__inline__ __device__ int orWithinWarp(int val) {
+//  for (int mask = WARP_SIZE/2; mask > 0; mask /= 2)
+//    val |= __shfl_xor(val, mask);
+//  return val;
+//}
+
+//__inline__ __device__ int sumWithinWarp(int val){
+//	for(int
+//}
 
 //__inline__ __device__ int countOnes(int x) {
 //	x = x - ((x >> 1) & 0x55555555);
@@ -27,19 +43,20 @@ __inline__ __device__ int orWithinWarp(int val) {
 
 
 __global__ void compressData(unsigned int* data, unsigned int* output) {
+	__shared__ int counts[32];
 	// get thread id
 	int id = threadIdx.x;
+	int id_global = threadIdx.y *32 + id;
 	unsigned int word = 0;
 	// retrieve word, only first 31 threads
 	if (id < WARP_SIZE - 1) {
-		word = data[id];
+		word = data[id_global];
 	}
 	// divide words into 31bit parts 
 	// gets 31 - id bits from one lane above
 	// and id bits from own lane
 	//word = (__shfl_down(word, 1) & (ONES31 >> id)) << id | (word & TOP31ONES) >> (32 - id);
 	word = ONES31 & ((__shfl_up(word, 1) >> (32 - id)) | (word << id));
-#ifndef WORD_DIVISION_TEST
 
 
 	// word info variables
@@ -63,15 +80,12 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	ones = orWithinWarp(ones);
 	literals = ~(zeros | ones);
 
-#ifndef EXTENSION_TEST
 	// send complete information to other threads
 	if (id == WARP_LEADER) {
 		zeros == __shfl(zeros, 0);
 		ones == __shfl(ones, 0);
 		literals == __shfl(literals, 0);
 	}
-
-	__syncthreads();
 
 	int n = 0x3 << id;
 	int flags = BIT31;
@@ -92,7 +106,6 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	flags = orWithinWarp(flags);
 	int blockSize = 1;
 
-	int index = __popc(((1<<id) - 1) & flags);
 	// calculate the number of words within a block
 	if (!idle) {
 		for (int i = id-1; i > 0; i--) {
@@ -107,14 +120,30 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 		else if (word == ZEROS) {
 			word = BIT31 | blockSize;
 		}
-		output[index] = word;
 	}
 
-#endif // !EXTENSION_TEST
+	// last thread calculates the number of words and writes it to the shared array
+	if(id == WARP_LEADER){
+		counts[threadIdx.y] = __popc(flags);
+	}
+
+	// sync all threads within block
+	__syncthreads();
+
+	// the first warp scans the array and gets total block word size
+	// then calculates offset
+	if(threadIdx.y == BLOCK_LEADER){
+		int count = counts[31-id];
+		int globalOffset = sumWithinWarp(count);
+		counts[31-id] = globalOffset - count;
+	}
+
+	__syncthreads();
+	// get global offset for warp and warp offset
+	int index = counts[threadIdx.y] + __popc(((1<<id) - 1) & flags);
+	output[index] = word;
 
 
-
-#endif // !WORD_DIVISION_TEST
 }
 
 
