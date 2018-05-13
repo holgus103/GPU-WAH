@@ -20,6 +20,14 @@ WARP_OPERATION_DOWN(|=, orWithinWarp);
 
 WARP_OPERATION_DOWN(+=, sumWithinWarp);
 
+__inline__ __device__ int localScan(int val, int id){
+	for(int i = 1; i < 32; i<<=1){
+		int ret = __shfl_up(val, i);
+		val += id >= i ? ret : 0;
+	}
+	return val;
+}
+
 
 //__inline__ __device__ int orWithinWarp(int val) {
 //  for (int mask = WARP_SIZE/2; mask > 0; mask /= 2)
@@ -133,9 +141,9 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	// the first warp scans the array and gets total block word size
 	// then calculates offset
 	if(threadIdx.y == BLOCK_LEADER){
-		int count = counts[31-id];
-		int globalOffset = sumWithinWarp(count);
-		counts[31-id] = globalOffset - count;
+		int count = counts[id];
+		int globalOffset = localScan(count, id);
+		counts[id] = globalOffset - count;
 	}
 
 	__syncthreads();
