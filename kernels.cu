@@ -54,7 +54,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	__shared__ int counts[32];
 	// get thread id
 	int id = threadIdx.x;
-	int id_global = threadIdx.y *32 + id;
+	int id_global = threadIdx.y *31 + id;
 	unsigned int word = 0;
 	// retrieve word, only first 31 threads
 	if (id < WARP_SIZE - 1) {

@@ -22,12 +22,14 @@ for (int i = 0; i < LEN; i++) { \
  */
 #define TEST_DATA(ARR_NAME, BASE_INDEX) \
 	ARR_NAME[BASE_INDEX + 0] = 8; \
-	ARR_NAME[BASE_INDEX + 1] = data[2] = 0;\
+	ARR_NAME[BASE_INDEX + 1] = 0;\
 	ARR_NAME[BASE_INDEX + 3] = 4 << 28;\
 	ARR_NAME[BASE_INDEX + 4] = 0;\
 	ARR_NAME[BASE_INDEX + 5] = 63 << 26;\
 	ARR_NAME[BASE_INDEX + 6] = ONES;\
 	ARR_NAME[BASE_INDEX + 7] = ONES >> 8;\
+
+
 
 #include "compress.h"
 #include "tests.h"
@@ -35,6 +37,9 @@ for (int i = 0; i < LEN; i++) { \
 #include <stdlib.h>
 #include <iostream>
 
+void initializeTestData(int baseIndex, unsigned int* arr){
+	TEST_DATA(arr, baseIndex);
+}
 
 bool divideIntoWordsTest()
 {
@@ -113,10 +118,18 @@ bool warpCompressionTest(){
 }
 
 bool blockCompressionTest(){
-	unsigned int data[62] = {0};
-	TEST_DATA(data, 0)
-	TEST_DATA(data, 31)
+	unsigned int data[32*31] = {0};
+	for(int i = 0; i<32; i++){
+		initializeTestData(i*31, data);
+	}
+	unsigned int * res = compress(data, 31*32);
 
-	unsigned int * res = compress(data, 62);
+	unsigned int help[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
+	unsigned int expected[32*6];
+	for(int i=0; i<32*6; i++){
+		expected[i] = help[i%6];
+	}
+	ASSERT(res, expected, 6*32);
+	std::cout << "blockCompressionTest succeeded" << std::endl;
 	return true;
 }
