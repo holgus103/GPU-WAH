@@ -6,11 +6,11 @@
 int main()
 {
 //	warpCompressionTest();
-//	blockCompressionTest();
+	blockCompressionTest();
 //	blockMergeTest();
 //	blockMergeWithOnesStartsTest();
 //	blockMergeAlternatingTest();
 //	blockMergeFinalLiterals();
-	blockMergeWanderingLiterals();
+//	blockMergeWanderingLiterals();
 	return 0;
 }
