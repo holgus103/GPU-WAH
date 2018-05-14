@@ -5,8 +5,12 @@
 
 int main()
 {
-//	warpCompressionTest
-	blockCompressionTest();
-	blockMergeTest();
+//	warpCompressionTest();
+//	blockCompressionTest();
+//	blockMergeTest();
+//	blockMergeWithOnesStartsTest();
+//	blockMergeAlternatingTest();
+//	blockMergeFinalLiterals();
+	blockMergeWanderingLiterals();
 	return 0;
 }

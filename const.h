@@ -8,6 +8,7 @@
 #define WARP_LEADER 0
 #define BLOCK_LEADER 0
 #define BIT31 0x80000000
+#define BIT30 0x40000000
 #define BIT3130 0xC0000000
 
 #define WORD_ZEROS 0

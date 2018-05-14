@@ -5,3 +5,7 @@ bool extendDataTest();
 bool warpCompressionTest();
 bool blockCompressionTest();
 bool blockMergeTest();
+bool blockMergeWithOnesStartsTest();
+bool blockMergeAlternatingTest();
+bool blockMergeFinalLiterals();
+bool blockMergeWanderingLiterals();

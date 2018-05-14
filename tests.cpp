@@ -1,14 +1,24 @@
 
-#define ASSERT(RES, EX, LEN)	\
+#define ASSERT_MODULO(RES, EX, LEN, MODULO)	\
 for (int i = 0; i < LEN; i++) { \
-	if (RES[i] != EX[i]) { \
+	if (RES[i] != EX[i % MODULO]) { \
 		std::cout << "Error at " << i << std::endl; \
 		return false; \
 	} \
 } \
 
+#define ASSERT(RES, EX, LEN) ASSERT_MODULO(RES, EX, LEN, LEN)
 #define ASSERT_32(RES, EX) ASSERT(RES, EX, 32)
 
+#define TEST_DEC(NAME) \
+bool NAME(){\
+	std::cout << (#NAME  ": ");
+
+#define TEST_END\
+	std::cout << "succeeded" << std::endl;\
+	free(res);\
+	return true;\
+}
 /*
  * 1. 0 | 8
  * 2. 00 | 30x0
@@ -92,8 +102,7 @@ bool extendDataTest() {
 
 }
 
-bool warpCompressionTest(){
-
+TEST_DEC(warpCompressionTest)
 	unsigned int data[31] = {0};
 	TEST_DATA(data, 0);
 
@@ -111,14 +120,9 @@ bool warpCompressionTest(){
 
 	ASSERT(res, expected, 6);
 
-	std::cout << "WarpCompression succeeded" << std::endl;
-	free(res);
-	return true;
+TEST_END
 
-}
-
-bool blockCompressionTest(){
-	std::cout << "blockCompressionTest: ";
+TEST_DEC(blockCompressionTest)
 	unsigned int data[32*31] = {0};
 	for(int i = 0; i<32; i++){
 		initializeTestData(i*31, data);
@@ -131,18 +135,78 @@ bool blockCompressionTest(){
 		expected[i] = help[i%6];
 	}
 	ASSERT(res, expected, 6*32);
-	std::cout << "succeeded" << std::endl;
-	free(res);
-	return true;
-}
+TEST_END
 
-bool blockMergeTest(){
-	std::cout << "blockMergeTest: ";
+TEST_DEC(blockMergeTest)
 	unsigned int data[32*31] = {0};
 
 	unsigned int expected[1] = {BIT31 | 1024};
 	unsigned int* res = compress(data, 31*32);
 	ASSERT(res, expected, 1);
-	std::cout << "succeeded" << std::endl;
-	free(res);
-}
+TEST_END
+
+TEST_DEC(blockMergeWithOnesStartsTest)
+	unsigned int data[32*31] = {0};
+
+	for(int i = 0; i < 32; i+=2){
+			data[31*i] = ONES;
+
+	}
+	unsigned int* res = compress(data, 31*32);
+	unsigned int help[] = {BIT3130 | 1, 1, BIT31 | 62 };
+	ASSERT_MODULO(res, help, 3*16,3)
+TEST_END
+
+TEST_DEC(blockMergeAlternatingTest)
+	unsigned int data[32*31] = {0};
+
+	for(int i = 2; i < 32; i+=4){
+		for(int j = 0; j < 62; j++){
+			data[31*i+j] = ONES;
+		}
+	}
+
+	unsigned int* res = compress(data, 31*32);
+	unsigned int expected[] = {BIT31 | 64, BIT3130 | 64};
+	ASSERT_MODULO(res, expected, 16, 2);
+TEST_END
+
+TEST_DEC(blockMergeFinalLiterals)
+	unsigned int data[31*32] = {0};
+
+	for(int i = 0; i < 32; i++){
+		data[31*(i+1) - 1] = 88;
+	}
+
+	unsigned int* res = compress(data, 31*32);
+	unsigned int expected[] = {BIT31 | 31, 44};
+	ASSERT_MODULO(res, expected, 64, 2);
+TEST_END
+
+TEST_DEC(blockMergeWanderingLiterals)
+	unsigned int data[31*32] = {0};
+
+	data[0] = 1;
+	data[31] = 1 << 31;
+	for(int i = 0; i < 30; i++){
+		data[31 + (i+1) * 32] = 1 << 30 - i;
+	}
+
+	unsigned int* res = compress(data, 31*32);
+	unsigned int expected[93];
+	expected[0] = 1;
+	expected[1] = BIT31 | 31;
+
+	for(int i=0; i < 30; i++){
+		expected[2+3*i] = BIT31 | i + 1;
+		expected[2+3*i + 1] = 1;
+		expected[2+3*i + 2] = BIT31 | 30 - i;
+	}
+	expected[91] = BIT31 | 32;
+	expected[92] = 1;
+
+	ASSERT(res, expected, 93)
+
+TEST_END
+
+

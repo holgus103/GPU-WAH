@@ -169,9 +169,12 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	if(threadIdx.y == BLOCK_LEADER){
 		merged[id] = false;
 		int count = counts[id];
+		// used to not check the same condition twice
+		bool satisfiedMergingConditions = false;
 		// only execute if it's a non
 		if((id == warpSize - 1) || (endings[id] != beginnings[id+1]) || endings[id] == WORD_LITERAL){
 			int i = 1;
+			satisfiedMergingConditions = true;
 			int bonus = 0;
 			// calculate merge shifts
 			while(true){
@@ -193,6 +196,9 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 				else break;
 			}
 			endLengths[id] = bonus;
+		}
+		if(!satisfiedMergingConditions){
+			endLengths[id] = 0;
 		}
 			mergeShift = localScan(mergeShift, id);
 			int globalOffset = localScan(count, id);
