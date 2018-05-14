@@ -118,6 +118,7 @@ bool warpCompressionTest(){
 }
 
 bool blockCompressionTest(){
+	std::cout << "blockCompressionTest: ";
 	unsigned int data[32*31] = {0};
 	for(int i = 0; i<32; i++){
 		initializeTestData(i*31, data);
@@ -130,17 +131,18 @@ bool blockCompressionTest(){
 		expected[i] = help[i%6];
 	}
 	ASSERT(res, expected, 6*32);
-	std::cout << "blockCompressionTest succeeded" << std::endl;
+	std::cout << "succeeded" << std::endl;
 	free(res);
 	return true;
 }
 
 bool blockMergeTest(){
+	std::cout << "blockMergeTest: ";
 	unsigned int data[32*31] = {0};
 
 	unsigned int expected[1] = {BIT31 | 1024};
 	unsigned int* res = compress(data, 31*32);
 	ASSERT(res, expected, 1);
-	std::cout << "blockMergeTest succeeded" << std::endl;
+	std::cout << "succeeded" << std::endl;
 	free(res);
 }

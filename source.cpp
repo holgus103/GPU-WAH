@@ -5,6 +5,8 @@
 
 int main()
 {
+//	warpCompressionTest
+	blockCompressionTest();
 	blockMergeTest();
 	return 0;
 }

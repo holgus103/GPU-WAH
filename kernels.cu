@@ -27,14 +27,13 @@ __inline__ __device__ int localScan(int val, int id){
 	return val;
 }
 
-__inline__ __device__ void markWordTypes(int w, int* end, int* beg, int id){
+__inline__ __device__ void markEndWordTypes(int w, int* end, int id){
 	IF_LAST{
 		end[threadIdx.y] = w;
 	}
-	IF_LAST{
-		beg[threadIdx.y] = w;
-	}
 }
+
+
 
 
 __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
@@ -46,7 +45,7 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 __global__ void compressData(unsigned int* data, unsigned int* output) {
 	// count of words for every warp
 	__shared__ int counts[32];
-	// lenght of the last word in a warp
+	// length of the last word in a warp
 	__shared__ int endLengths[32];
 	// type of the last word in a warp
 	__shared__ int endings[32];
@@ -54,8 +53,6 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	__shared__ int beginnings[32];
 	// array indicating whether the last thread of a warp has been merged
 	__shared__ bool merged[32];
-	// shift related to warpmerging
-//	__shared__ int mergeShifts[32] = {0};
 
 
 	// get thread id
@@ -77,23 +74,27 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	int ones = 0;
 	int zeros = 0;
 	int literals = 0;
+	int type;
 
 	// mark word types for warp
 	// detect words with zeros and words with ones
 	// is a zero fill word
 	if (word == ZEROS) {
 		zeros |= 1 << id;
-		markWordTypes(WORD_ZEROS, endings, beginnings, id);
+		type = WORD_ZEROS;
+		markEndWordTypes(WORD_ZEROS, endings, id);
 	}
 
 	// is a one fill word
 	else if (word == ONES31) {
 		ones |= 1 << id;
-		markWordTypes(WORD_ONES, endings, beginnings, id);
+		type = WORD_ONES;
+		markEndWordTypes(WORD_ONES, endings, id);
 	}
 	else
 	{
-		markWordTypes(WORD_LITERAL, endings, beginnings, id);
+		type = WORD_LITERAL;
+		markEndWordTypes(WORD_LITERAL, endings, id);
 	}
 
 	// exchange word information within the warp
@@ -126,6 +127,12 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	// exchange endings 
 	flags = orWithinWarp(flags);
 	int blockSize = 1;
+	// index within warp
+	int index = __popc(((1<<id) - 1) & flags);
+	// if first word in block, write beginning
+	if(index == 0){
+		beginnings[threadIdx.y] = type;
+	}
 
 	// calculate the number of words within a block
 	if (!idle) {
@@ -163,24 +170,25 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 		merged[id] = false;
 		int count = counts[id];
 		// only execute if it's a non
-		if((id == warpSize - 1) || (endings[id] != beginnings[id+1])){
+		if((id == warpSize - 1) || (endings[id] != beginnings[id+1]) || endings[id] == WORD_LITERAL){
 			int i = 1;
 			int bonus = 0;
 			// calculate merge shifts
 			while(true){
 				// has 1 length and words match
-				if(i < id && counts[id - i] == 1 && beginnings[id] == endings[id-i]){
+				if(i < id && counts[id - i] == 1 && beginnings[id] == endings[id-i] && beginnings[id] != WORD_LITERAL){
 					mergeShift++;
 					merged[id - i] = true;
 					bonus += endLengths[id - i];
 					i++;
 
 				}
-				else if(i <= id && beginnings[id] == endings[id - i]){
+				else if(i <= id && beginnings[id] == endings[id - i] && beginnings[id] != WORD_LITERAL){
 					mergeShift++;
 					merged[id - i] = true;
 					bonus += endLengths[id - i];
 					i++;
+					break;
 				}
 				else break;
 			}
@@ -199,7 +207,6 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 
 	// get global offset for warp and warp offset
 	if(!idle){
-		int index = __popc(((1<<id) - 1) & flags);
 		// first word in a warp gets a bonus
 		int bonus = index == 0 ? endLengths[threadIdx.y] : 0;
 		index += counts[threadIdx.y];
