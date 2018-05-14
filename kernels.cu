@@ -53,7 +53,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	// type of the first word in a warp
 	__shared__ int beginnings[32];
 	// array indicating whether the last thread of a warp has been merged
-	__shared__ bool merged[32] = {false};
+	__shared__ bool merged[32];
 	// shift related to warpmerging
 //	__shared__ int mergeShifts[32] = {0};
 
@@ -129,19 +129,22 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 
 	// calculate the number of words within a block
 	if (!idle) {
-		for (int i = id-1; i > 0; i--) {
+		for (int i = id-1; i >= 0; i--) {
 			if ((flags & (1 << i)) > 0) {
 				break;
 			}
 			blockSize++;
 		}
 		if (word == ONES31) {
-//			word = BIT3130 | blockSize;
+//			word = BIT3130;
 			writeEndingSize(id, endLengths, blockSize);
 		}
 		else if (word == ZEROS) {
-//			word = BIT31 | blockSize;
+//			word = BIT31;
 			writeEndingSize(id, endLengths, blockSize);
+		}
+		else{
+			writeEndingSize(id, endLengths, 0);
 		}
 	}
 
@@ -157,34 +160,57 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	// then calculates offset
 	int mergeShift = 0;
 	if(threadIdx.y == BLOCK_LEADER){
+		merged[id] = false;
 		int count = counts[id];
 		// only execute if it's a non
-		if((threadIdx.y == warpSize - 1) || (endings[id] != beginnings[id+1])){
-			int i = 0;
+		if((id == warpSize - 1) || (endings[id] != beginnings[id+1])){
+			int i = 1;
+			int bonus = 0;
 			// calculate merge shifts
 			while(true){
 				// has 1 length and words match
 				if(i < id && counts[id - i] == 1 && beginnings[id] == endings[id-i]){
 					mergeShift++;
 					merged[id - i] = true;
+					bonus += endLengths[id - i];
+					i++;
 
 				}
 				else if(i <= id && beginnings[id] == endings[id - i]){
 					mergeShift++;
 					merged[id - i] = true;
+					bonus += endLengths[id - i];
+					i++;
 				}
 				else break;
 			}
+			endLengths[id] = bonus;
+		}
 			mergeShift = localScan(mergeShift, id);
 			int globalOffset = localScan(count, id);
 			counts[id] = globalOffset - count - mergeShift;
-		}
 	}
 
 	__syncthreads();
+
+	IF_LAST{
+		idle = merged[threadIdx.y];
+	}
+
 	// get global offset for warp and warp offset
-	int index = counts[threadIdx.y] + __popc(((1<<id) - 1) & flags);
-	output[index] = word;
+	if(!idle){
+		int index = __popc(((1<<id) - 1) & flags);
+		// first word in a warp gets a bonus
+		int bonus = index == 0 ? endLengths[threadIdx.y] : 0;
+		index += counts[threadIdx.y];
+		if (word == ONES31) {
+			word = BIT3130 | (blockSize + bonus);
+		}
+		else if (word == ZEROS) {
+			word = BIT31 | (blockSize + bonus);
+		}
+		output[index] = word;
+	}
 
 
 }
