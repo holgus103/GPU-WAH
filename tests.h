@@ -4,3 +4,4 @@ bool divideIntoWordsTest();
 bool extendDataTest();
 bool warpCompressionTest();
 bool blockCompressionTest();
+bool blockMergeTest();

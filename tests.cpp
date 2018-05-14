@@ -131,5 +131,16 @@ bool blockCompressionTest(){
 	}
 	ASSERT(res, expected, 6*32);
 	std::cout << "blockCompressionTest succeeded" << std::endl;
+	free(res);
 	return true;
+}
+
+bool blockMergeTest(){
+	unsigned int data[32*31] = {0};
+
+	unsigned int expected[1] = {BIT31 | 1024};
+	unsigned int* res = compress(data, 31*32);
+	ASSERT(res, expected, 1);
+	std::cout << "blockMergeTest succeeded" << std::endl;
+	free(res);
 }

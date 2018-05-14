@@ -5,6 +5,6 @@
 
 int main()
 {
-	blockCompressionTest();
+	blockMergeTest();
 	return 0;
 }
