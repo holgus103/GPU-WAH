@@ -57,7 +57,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 
 	// get thread id
 	int id = threadIdx.x;
-	int id_global = threadIdx.y *31 + id;
+	int id_global = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y *31 + id;
 	unsigned int word = 0;
 	// retrieve word, only first 31 threads
 	if (id < WARP_SIZE - 1) {
@@ -224,6 +224,12 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 		}
 		output[index] = word;
 	}
+//	IF_LAST{
+//		if(threadIdx.y == (blockDim.y - 1)){
+//			// is last in block
+//			blockCounts_gpu[blockIdx.x] = index;
+//		}
+//	}
 
 
 }

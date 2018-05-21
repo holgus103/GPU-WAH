@@ -133,7 +133,7 @@ TEST_DEC(blockCompressionTest)
 	ASSERT_MODULO(res, help, 6*32, 6);
 TEST_END
 
-TEST_DEC(blockMergeTest)s
+TEST_DEC(blockMergeTest)
 	unsigned int data[32*31] = {0};
 
 	unsigned int expected[1] = {BIT31 | 1024};
