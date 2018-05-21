@@ -9,7 +9,7 @@
 #define KERNELS_H_
 
 
-__global__ void compressData(unsigned int* data_gpu, unsigned int* compressed_gpu);
+__global__ void compressData(unsigned int* data_gpu, unsigned int* compressed_gpu, int dataSize);
 
 
 #endif /* KERNELS_H_ */

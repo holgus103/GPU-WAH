@@ -42,7 +42,7 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 	}
 }
 
-__global__ void compressData(unsigned int* data, unsigned int* output) {
+__global__ void compressData(unsigned int* data, unsigned int* output, int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
 	// length of the last word in a warp
@@ -60,6 +60,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	int id_global = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y *31 + id;
 	unsigned int word = 0;
 	// retrieve word, only first 31 threads
+	if(id_global >= data) return;
 	if (id < WARP_SIZE - 1) {
 		word = data[id_global];
 	}
@@ -103,11 +104,11 @@ __global__ void compressData(unsigned int* data, unsigned int* output) {
 	literals = ~(zeros | ones);
 
 	// send complete information to other threads
-	if (id == WARP_LEADER) {
-		zeros == __shfl(zeros, 0);
-		ones == __shfl(ones, 0);
-		literals == __shfl(literals, 0);
-	}
+//	if (id == WARP_LEADER) {
+//		zeros = __shfl(zeros, 0);
+//		ones = __shfl(ones, 0);
+//		literals = __shfl(literals, 0);
+//	}
 
 	int n = 0x3 << id;
 	int flags = BIT31;

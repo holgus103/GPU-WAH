@@ -31,21 +31,25 @@ unsigned int* compress(unsigned int* data_cpu, unsigned int dataSize){
 		blockCount++;
 	}
 
-	unsigned int *data_gpu, *compressed_gpu;//, *blockCounts_gpu;
+	unsigned int *data_gpu, *compressed_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
 	long long maxExpectedSize = 8*sizeof(int)*dataSize;
-	if(maxExpectedSize % 31 == 0)
+	if(maxExpectedSize % 31 > 0){
+		maxExpectedSize /= 31;
+		maxExpectedSize++;
+	}
+	else{
+		maxExpectedSize /= 31;
+	}
 
-	maxExpectedSize /= 8*sizeof(int);
+	maxExpectedSize *= 8*sizeof(int);
 	if(maxExpectedSize)
-	// increment in case it got rounded
-	maxExpectedSize++;
-	dim3 dimBlock(32, dataSize/31);
+
+	dim3 dimBlock(32, 32);
 	// allocate memory for results
 	unsigned int* compressed_cpu = (unsigned int*)malloc(sizeof(int)*maxExpectedSize);
 	// allocate memory on the device
-//	cudaMalloc((void**)&blockCounts_gpu, blockCount *sizeof(int));
 	cudaMalloc((void**)&data_gpu, dataSize * sizeof(int));
 	cudaMalloc((void**)&compressed_gpu, maxExpectedSize * sizeof(int));
 
@@ -53,7 +57,7 @@ unsigned int* compress(unsigned int* data_cpu, unsigned int dataSize){
 	cudaMemcpy(data_gpu, data_cpu, dataSize*sizeof(int), cudaMemcpyHostToDevice);
 
 	// call compression kernel
-	compressData<<<blockCount,dimBlock>>>(data_gpu, compressed_gpu);
+	compressData<<<blockCount,dimBlock>>>(data_gpu, compressed_gpu, dataSize);
 //	compressed_gpu = thrust::remove_if(compressed_gpu, compressed_gpu + maxExpectedSize, is_zero());
 
 	// copy compressed data
@@ -62,7 +66,6 @@ unsigned int* compress(unsigned int* data_cpu, unsigned int dataSize){
 	// free gpu memory
 	cudaFree((void*)data_gpu);
 	cudaFree((void*)compressed_gpu);
-//	cudaFree((void*)blockCounts_gpu);
 
 	return compressed_cpu;
 }

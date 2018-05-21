@@ -19,6 +19,13 @@ bool NAME(){\
 	free(res);\
 	return true;\
 }
+
+#include "compress.h"
+#include "tests.h"
+#include "const.h"
+#include <stdlib.h>
+#include <iostream>
+
 /*
  * 1. 0 | 8
  * 2. 00 | 30x0
@@ -30,22 +37,38 @@ bool NAME(){\
  * 8. 8x0 | 24x1
  * 9..31 0...
  */
-#define TEST_DATA(ARR_NAME, BASE_INDEX) \
-	ARR_NAME[BASE_INDEX + 0] = 8; \
-	ARR_NAME[BASE_INDEX + 1] = 0;\
-	ARR_NAME[BASE_INDEX + 3] = 4 << 28;\
-	ARR_NAME[BASE_INDEX + 4] = 0;\
-	ARR_NAME[BASE_INDEX + 5] = 63 << 26;\
-	ARR_NAME[BASE_INDEX + 6] = ONES;\
-	ARR_NAME[BASE_INDEX + 7] = ONES >> 8;\
+void generateTestData(int* arr, int baseIndex){
+	arr[baseIndex + 0] = 8;
+	arr[baseIndex + 1] = 0;
+	arr[baseIndex + 3] = 4 << 28;
+	arr[baseIndex + 4] = 0;
+	arr[baseIndex + 5] = 63 << 26;
+	arr[baseIndex + 6] = ONES;
+	arr[baseIndex + 7] = ONES >> 8;
+}
 
+void generateWanderingTestData(int* arr, int baseIndex){
+	arr[baseIndex] = 1;
+	data[baseIndex + 31] = 1 <<31;
+	for(int i = 0; i < 30; i++){
+		arr[baseIndex+ 31 + (i+1) * 32] = 1 << 30 - i;
+	}
+}
 
+void generateWanderingExpectedData(int* expected, int baseIndex){
+	expected[baseIndex] = 1;
+	expected[baseIndex + 1] = BIT31 | 31;
+	for(int i=0; i < 30; i++){
+		expected[baseIndex + 2+3*i] = BIT31 | i + 1;
+		expected[baseIndex + 2+3*i + 1] = 1;
+		expected[baseIndex + 2+3*i + 2] = BIT31 | 30 - i;
+	}
+	expected[baseIndex + 91] = BIT31 | 32;
+	expected[baseIndex + 92] = 1;
 
-#include "compress.h"
-#include "tests.h"
-#include "const.h"
-#include <stdlib.h>
-#include <iostream>
+}
+
+void
 
 void initializeTestData(int baseIndex, unsigned int* arr){
 	TEST_DATA(arr, baseIndex);
@@ -71,8 +94,6 @@ bool divideIntoWordsTest()
 	free(results);
 	return true;
 }
-
-
 
 bool extendDataTest() {
 	unsigned int data[31] = { 0 };
@@ -104,7 +125,7 @@ bool extendDataTest() {
 
 TEST_DEC(warpCompressionTest)
 	unsigned int data[31] = {0};
-	TEST_DATA(data, 0);
+	generateTestData(data, 0);
 
 //	data[0] = 8;
 //	data[1] = data[2] = 0;
@@ -182,27 +203,29 @@ TEST_END
 TEST_DEC(blockMergeWanderingLiterals)
 	unsigned int data[31*32] = {0};
 
-	data[0] = 1;
-	data[31] = 1 << 31;
-	for(int i = 0; i < 30; i++){
-		data[31 + (i+1) * 32] = 1 << 30 - i;
-	}
+	generateWanderingTestData(data,0);
 
 	unsigned int* res = compress(data, 31*32);
 	unsigned int expected[93];
-	expected[0] = 1;
-	expected[1] = BIT31 | 31;
 
-	for(int i=0; i < 30; i++){
-		expected[2+3*i] = BIT31 | i + 1;
-		expected[2+3*i + 1] = 1;
-		expected[2+3*i + 2] = BIT31 | 30 - i;
-	}
-	expected[91] = BIT31 | 32;
-	expected[92] = 1;
+	generateWanderingExpectedData(expected);
 
 	ASSERT(res, expected, 93)
 
 TEST_END
+
+TEST_DEC(multiBlockTest)
+	unsigned int data[2*31*32] = {0};
+	generateWanderingTestData(data, 0);
+	generateWanderingTestData(data, 31*32);
+
+	unsigned int* res = compress(data, 2*31*32);
+	unsigned int expected[93*2];
+	generateWanderingExpectedData(expected, 0);
+	generateWanderingExpectedData(93);
+	ASSERT(res, expected, 93*2);
+
+TEST_END
+
 
 

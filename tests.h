@@ -9,3 +9,4 @@ bool blockMergeWithOnesStartsTest();
 bool blockMergeAlternatingTest();
 bool blockMergeFinalLiterals();
 bool blockMergeWanderingLiterals();
+bool multiBlockTest();
