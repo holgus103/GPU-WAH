@@ -3,6 +3,7 @@
 for (int i = 0; i < LEN; i++) { \
 	if (RES[i] != EX[i % MODULO]) { \
 		std::cout << "Error at " << i << std::endl; \
+		std::cout << "Expected: " << EX[i % MODULO] << " but got: " << RES[i] <<std::endl;\
 		return false; \
 	} \
 } \
@@ -37,7 +38,7 @@ bool NAME(){\
  * 8. 8x0 | 24x1
  * 9..31 0...
  */
-void generateTestData(int* arr, int baseIndex){
+void generateTestData(unsigned int* arr, int baseIndex){
 	arr[baseIndex + 0] = 8;
 	arr[baseIndex + 1] = 0;
 	arr[baseIndex + 3] = 4 << 28;
@@ -47,15 +48,15 @@ void generateTestData(int* arr, int baseIndex){
 	arr[baseIndex + 7] = ONES >> 8;
 }
 
-void generateWanderingTestData(int* arr, int baseIndex){
+void generateWanderingTestData(unsigned int* arr, int baseIndex){
 	arr[baseIndex] = 1;
-	data[baseIndex + 31] = 1 <<31;
+	arr[baseIndex + 31] = 1 <<31;
 	for(int i = 0; i < 30; i++){
 		arr[baseIndex+ 31 + (i+1) * 32] = 1 << 30 - i;
 	}
 }
 
-void generateWanderingExpectedData(int* expected, int baseIndex){
+void generateWanderingExpectedData(unsigned int* expected, int baseIndex){
 	expected[baseIndex] = 1;
 	expected[baseIndex + 1] = BIT31 | 31;
 	for(int i=0; i < 30; i++){
@@ -68,10 +69,8 @@ void generateWanderingExpectedData(int* expected, int baseIndex){
 
 }
 
-void
-
 void initializeTestData(int baseIndex, unsigned int* arr){
-	TEST_DATA(arr, baseIndex);
+	generateTestData(arr, baseIndex);
 }
 
 bool divideIntoWordsTest()
@@ -208,7 +207,7 @@ TEST_DEC(blockMergeWanderingLiterals)
 	unsigned int* res = compress(data, 31*32);
 	unsigned int expected[93];
 
-	generateWanderingExpectedData(expected);
+	generateWanderingExpectedData(expected, 0);
 
 	ASSERT(res, expected, 93)
 
@@ -222,8 +221,9 @@ TEST_DEC(multiBlockTest)
 	unsigned int* res = compress(data, 2*31*32);
 	unsigned int expected[93*2];
 	generateWanderingExpectedData(expected, 0);
-	generateWanderingExpectedData(93);
-	ASSERT(res, expected, 93*2);
+	generateWanderingExpectedData(expected, 93);
+
+	ASSERT(res, expected, 186);
 
 TEST_END
 

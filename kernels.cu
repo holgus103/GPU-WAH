@@ -42,7 +42,7 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 	}
 }
 
-__global__ void compressData(unsigned int* data, unsigned int* output, int dataSize) {
+__global__ void compressData(unsigned int* data, unsigned int* output, unsigned int* blockCounts, int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
 	// length of the last word in a warp
@@ -57,10 +57,10 @@ __global__ void compressData(unsigned int* data, unsigned int* output, int dataS
 
 	// get thread id
 	int id = threadIdx.x;
-	int id_global = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y *31 + id;
+	int id_global = blockIdx.x * (31*32) + threadIdx.y *31 + id;
 	unsigned int word = 0;
 	// retrieve word, only first 31 threads
-	if(id_global >= data) return;
+	if(id_global > dataSize) return;
 	if (id < WARP_SIZE - 1) {
 		word = data[id_global];
 	}
@@ -202,7 +202,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, int dataS
 			endLengths[id] = 0;
 		}
 			mergeShift = localScan(mergeShift, id);
-			int globalOffset = localScan(count, id);
+			int globalOffset = (blockDim.x * blockDim.y) * blockIdx.x + localScan(count, id);
 			counts[id] = globalOffset - count - mergeShift;
 	}
 
@@ -224,15 +224,26 @@ __global__ void compressData(unsigned int* data, unsigned int* output, int dataS
 			word = BIT31 | (blockSize + bonus);
 		}
 		output[index] = word;
+
+		// if it's the last thread in block - either processing last word or the last thread of the last warp
+		if((id == (warpSize - 1) && threadIdx.y == (blockDim.y - 1)) || id_global == (dataSize - 1)){
+				blockCounts[blockIdx.x] = index + blockSize + bonus;
+
+		}
 	}
-//	IF_LAST{
-//		if(threadIdx.y == (blockDim.y - 1)){
-//			// is last in block
-//			blockCounts_gpu[blockIdx.x] = index;
-//		}
-//	}
 
 
+}
+
+
+
+__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts){
+	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
+	unsigned int word = initialOutput[globalId];
+	if(word == 0) return;
+	unsigned int blockOffset = blockCounts[blockIdx.x];
+	int blockId = threadIdx.x + threadIdx.y * blockDim.x;
+	finalOutput[blockOffset + blockId] = word;
 }
 
 
