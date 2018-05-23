@@ -229,11 +229,12 @@ TEST_DEC(multiBlockTest)
 TEST_END
 
 TEST_DEC(compressAndDecompressTest)
-	unsigned int data[2*31*32];
+	unsigned int data[2*31*32] = {0};
 	generateWanderingTestData(data, 0);
 	generateWanderingTestData(data, 31*32);
 	unsigned int* res = compress(data, 2*32*32);
 	unsigned int* decomp = decompress(res, 186);
+	ASSERT(decomp, data, 1984)
 	free(decomp);
 TEST_END
 

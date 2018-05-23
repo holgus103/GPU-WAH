@@ -268,7 +268,7 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned int* counts_gpu
 	if(globalId >= dataSize) return;
 	unsigned int word = data_gpu[globalId];
 	int offset = counts_gpu[globalId];
-	printf("id : %d offset: %d \n", globalId, offset);
+//	printf("id : %d offset: %d \n", globalId, offset);
 	if((BIT31 & word) > 0){
 
 		int count = word & (BIT30 - 1);
@@ -302,11 +302,14 @@ __global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_g
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	int id = threadIdx.x;
 	if(globalId >= dataSize) return;
-	unsigned int word = result_gpu[id];
-	word = (__shfl_down(word, 1) << (warpSize - id - 1)) | (word >> (id + 1));
+	unsigned int word = result_gpu[globalId];
+	word = (__shfl_down(word, 1) << (warpSize - id - 1)) | (word >> id);
 	// first 31 threads save a word each
-	if(id < warpSize){
+	if(id < warpSize - 1){
 		finalOutput_gpu[blockIdx.x * 31*32 + threadIdx.y * 31 + id] = word;
+//		if(blockIdx.x * 31*32 + threadIdx.y * 31 + id == 31){
+//			printf("thread id %d", globalId);
+//		}
 	}
 
 
