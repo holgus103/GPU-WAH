@@ -12,6 +12,7 @@ int main()
 //	blockMergeAlternatingTest();
 //	blockMergeFinalLiterals();
 //	blockMergeWanderingLiterals();
-	multiBlockTest();
+//	multiBlockTest();
+	compressAndDecompressTest();
 	return 0;
 }

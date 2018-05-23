@@ -10,3 +10,4 @@ bool blockMergeAlternatingTest();
 bool blockMergeFinalLiterals();
 bool blockMergeWanderingLiterals();
 bool multiBlockTest();
+bool compressAndDecompressTest();

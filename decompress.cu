@@ -12,14 +12,14 @@ unsigned int* decompress(unsigned int* data, unsigned int dataSize){
 	}
 	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
 	cudaMalloc((void**)&counts_gpu, sizeof(int)*dataSize);
-	cudaMemcpy(data, data_gpu, sizeof(int)*dataSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(data_gpu, data, sizeof(int)*dataSize, cudaMemcpyHostToDevice);
 	counts_cpu = (unsigned int*) malloc(sizeof(int)*dataSize);
 	dim3 blockDim(32, 32);
 	// get blocked sizes
 	getCounts<<<blockCount,blockDim>>>(data_gpu, counts_gpu, dataSize);
 	cudaMemcpy(counts_cpu, counts_gpu, sizeof(int)*dataSize, cudaMemcpyDeviceToHost);
 	// scan block sizes
-	thrust::device_ptr<unsigned int> countsPtr = thrust::device_ptr<unsigned int>(counts_gpu);
+	thrust::device_ptr<unsigned int> countsPtr(counts_gpu);
 	// get counts
 	thrust::exclusive_scan(countsPtr, countsPtr + dataSize, countsPtr);
 	thrust::inclusive_scan(counts_cpu, counts_cpu + dataSize, counts_cpu);
@@ -27,7 +27,7 @@ unsigned int* decompress(unsigned int* data, unsigned int dataSize){
 	free(counts_cpu);
 	cudaMalloc((void**)&result_gpu, sizeof(int) * outputSize);
 
-	decompressWords<<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, outputSize);
+	decompressWords<<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, dataSize);
 	cudaFree(data_gpu);
 	cudaFree(counts_gpu);
 

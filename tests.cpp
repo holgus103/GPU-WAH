@@ -22,6 +22,7 @@ bool NAME(){\
 }
 
 #include "compress.h"
+#include "decompress.h"
 #include "tests.h"
 #include "const.h"
 #include <stdlib.h>
@@ -225,6 +226,15 @@ TEST_DEC(multiBlockTest)
 
 	ASSERT(res, expected, 186);
 
+TEST_END
+
+TEST_DEC(compressAndDecompressTest)
+	unsigned int data[2*31*32];
+	generateWanderingTestData(data, 0);
+	generateWanderingTestData(data, 31*32);
+	unsigned int* res = compress(data, 2*32*32);
+	unsigned int* decomp = decompress(res, 186);
+	free(decomp);
 TEST_END
 
 
