@@ -33,9 +33,6 @@ __inline__ __device__ void markEndWordTypes(int w, int* end, int id){
 	}
 }
 
-
-
-
 __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 	IF_LAST{
 		lengths[threadIdx.y] = size;
@@ -235,8 +232,6 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 
 }
 
-
-
 __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts){
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
 	unsigned int word = initialOutput[globalId];
@@ -246,6 +241,73 @@ __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput,
 	finalOutput[blockOffset + blockId] = word;
 }
 
+__global__ void getCounts(unsigned int* data_gpu, unsigned int* counts_gpu, int dataSize){
+	// get global id
+	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
+	// is within the data range
+	if(globalId < dataSize){
+		// get word
+		unsigned int word = data_gpu[globalId];
+		if((BIT31 & word) > 0){
+			// if filler word - get count
+				int count = word && (BIT30 - 1);
+				counts_gpu[globalId] = count;
+		}
+		else{
+			counts_gpu[globalId] = 1;
+		}
+
+	}
+
+}
+
+__global__ void decompressWords(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int* result_gpu, int dataSize){
+	// get global id
+	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
+	// out of range
+	if(globalId >= dataSize) return;
+	unsigned int word = data_gpu[globalId];
+	int offset = counts_gpu[globalId];
+	if((BIT31 & word) > 0){
+
+		int count = word && (BIT30 - 1);
+		unsigned int filler;
+		// assign correct filler word
+		if((BIT3130 & word) == BIT3130){
+			// is ones
+			filler = ONES31;
+		}
+		else{
+			// zeros
+			filler = 0;
+		}
+		// fill array
+		for(int i = 0; i < count; i++){
+			result_gpu[offset + i] = filler;
+		}
+
+	}
+	else{
+		result_gpu[offset] = word;
+	}
+
+
+}
+
+__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, int dataSize){
+	// get global id
+	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
+	int id = threadIdx.x;
+	if(globalId >= dataSize) return;
+	unsigned int word = result_gpu[id];
+	word = (__shfl_down(word, 1) >> (warpSize - id - 1)) | (word << (id + 1));
+	// first 31 threads save a word each
+	if(id < warpSize){
+		finalOutput_gpu[blockIdx.x * 31*32 + threadIdx.y * 31 + id] = word;
+	}
+
+
+}
 
 
 
