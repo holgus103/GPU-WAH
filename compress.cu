@@ -45,9 +45,9 @@ unsigned int* compress(
 	cudaEventCreate(&start);
 	cudaEventRecord(start,0);
 
-	int blockCount = dataSize / 1024;
+	int blockCount = dataSize / (31*32);
 
-	if(dataSize % 1024 > 0){
+	if(dataSize % (31*32)> 0){
 		blockCount++;
 	}
 

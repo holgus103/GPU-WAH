@@ -10,3 +10,4 @@ Debug/
 *.pdb
 .metadata/
 RemoteSystemTempFiles/
+/Release/

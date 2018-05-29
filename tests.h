@@ -11,3 +11,5 @@ bool blockMergeFinalLiterals();
 bool blockMergeWanderingLiterals();
 bool multiBlockTest();
 bool compressAndDecompressTest();
+bool randomDataTest();
+void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN);

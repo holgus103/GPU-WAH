@@ -58,6 +58,30 @@ void generateWanderingTestData(unsigned int* arr, int baseIndex){
 	}
 }
 
+
+void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN) {
+	int res;
+	int treshold=RAND_MAX/everyN;
+	for (int i=0;i<size*32;i++) {
+		int word=i>>5; // /32
+		int off=i&31; // %32
+		if (off==0) {
+			//tab[word]=0;
+			res=0;
+			if (word%1000==0) printf("%f%%   \r",i*100.0/(double)(size*32-1));
+			//if (word>0) printf("%x \n",tab[word-1]);
+		}
+		//double v=(double)rand()/(double)RAND_MAX;
+		int bit=(rand()<treshold)<<off;
+		res=res|bit;
+		if (off==31) {
+			tab[word]=res;
+			//printf("%x \n",res);
+		}
+	}
+	printf("100%%                        \n");
+}
+
 void generateWanderingExpectedData(unsigned int* expected, int baseIndex){
 	expected[baseIndex] = 1;
 	expected[baseIndex + 1] = BIT31 | 31;
@@ -235,12 +259,13 @@ TEST_END
 
 TEST_DEC(compressAndDecompressTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	unsigned int data[3*31*32] = {0};
-	generateWanderingTestData(data, 0);
-	generateWanderingTestData(data, 31*32);
-	generateWanderingTestData(data, 2*31*32);
+	int blocks = 1024;
+	unsigned int data[1024*31*32] = {0};
+	for(int j = 0; j < blocks; j++){
+		generateWanderingTestData(data, j*31*32);
+	}
 	unsigned int compressedSize, decompressedSize;
-	unsigned int* res = compress(data, 3*32*32, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* res = compress(data, blocks*31*32, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, decompressedSize)
 	free(decomp);
@@ -254,6 +279,19 @@ TEST_DEC(compressAndDecompressTest)
 	printf("Transfer to device: %f \n", d_transferToDevice);
 	printf("Compression: %f \n", d_compression);
 	printf("Transfer from device: %f \n", d_transferFromDevice);
+TEST_END
+
+
+TEST_DEC(randomDataTest)
+	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
+	int size = 31*32 *100; //16MB of imts
+	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
+	generateRandomData(data, size, (1 << 4));
+	unsigned int compressedSize, decompressedSize;
+	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	ASSERT(decomp, data, decompressedSize)
+	free(decomp);
 TEST_END
 
 
