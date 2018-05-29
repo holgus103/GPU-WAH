@@ -9,6 +9,11 @@
 
 
 
-unsigned int* compress(unsigned int* data,unsigned int dataSize);
+unsigned int* compress(
+		unsigned int* data_cpu,
+		unsigned int dataSize,
+		float* pTransferToDeviceTime,
+		float* pCompressionTime,
+		float* ptranserFromDeviceTime);
 
 #endif /* COMPRESS_H_ */

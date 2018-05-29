@@ -8,7 +8,12 @@
 #ifndef DECOMPRESS_H_
 #define DECOMPRESS_H_
 
-unsigned int* decompress(unsigned int* data, unsigned int dataSize);
+unsigned int* decompress(
+		unsigned int* data,
+		unsigned int dataSize,
+		float* pTransferToDeviceTime,
+		float* pCompressionTime,
+		float* ptranserFromDeviceTime);
 
 
 

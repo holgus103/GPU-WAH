@@ -4,19 +4,19 @@
 #include <stdio.h>
 #include "tests.h"
 
-//int main()
-//{
-////	warpCompressionTest();
-////	blockCompressionTest();
-////	blockMergeTest();
-////	blockMergeWithOnesStartsTest();
-////	blockMergeAlternatingTest();
-////	blockMergeFinalLiterals();
-////	blockMergeWanderingLiterals();
-////	multiBlockTest();
-//	compressAndDecompressTest();
-//	return 0;
-//}
+int main()
+{
+//	warpCompressionTest();
+//	blockCompressionTest();
+//	blockMergeTest();
+//	blockMergeWithOnesStartsTest();
+//	blockMergeAlternatingTest();
+//	blockMergeFinalLiterals();
+//	blockMergeWanderingLiterals();
+//	multiBlockTest();
+	compressAndDecompressTest();
+	return 0;
+}
 
 
 
@@ -43,13 +43,13 @@ void generateRandomData(unsigned int* tab, unsigned int size, unsigned int every
 	printf("100%%                        \n");
 }
 
-int main(){
-	for (int s=30;s<=30;s++) {
-		for (unsigned int i=1;i<=16;i++) {
-			unsigned int* dataset = new unsigned int[s*1024*1024+1];
-			generateRandomData(dataset, s*1024*1024, 1<<i);
-			unsigned int* compressed = compress(dataset,s*1024*1024);
-		}
-	}
-
-}
+//int main(){
+//	for (int s=30;s<=30;s++) {
+//		for (unsigned int i=1;i<=16;i++) {
+//			unsigned int* dataset = new unsigned int[s*1024*1024+1];
+//			generateRandomData(dataset, s*1024*1024, 1<<i);
+//			unsigned int* compressed = compress(dataset,s*1024*1024, NULL, NULL, NULL);
+//		}
+//	}
+//
+//}
