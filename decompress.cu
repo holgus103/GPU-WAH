@@ -7,6 +7,7 @@
 unsigned int* decompress(
 		unsigned int* data,
 		unsigned int dataSize,
+		unsigned int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -47,6 +48,16 @@ unsigned int* decompress(
 //	thrust::inclusive_scan(counts_cpu, counts_cpu + dataSize, counts_cpu);
 	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(int), cudaMemcpyDeviceToHost);
 	int outputSize = lastBlockSize + lastOffset;
+	int realSize = 31*outputSize;
+
+	if(realSize % 32 > 0){
+		realSize /=32;
+		realSize++;
+	}
+	else{
+		realSize /=32;
+	}
+	SAFE_ASSIGN(outSize, realSize);
 //	free(counts_cpu);
 	cudaMalloc((void**)&result_gpu, sizeof(int) * outputSize);
 

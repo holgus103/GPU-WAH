@@ -11,6 +11,7 @@
 unsigned int* decompress(
 		unsigned int* data,
 		unsigned int dataSize,
+		unsigned int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);

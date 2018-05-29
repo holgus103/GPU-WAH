@@ -12,6 +12,7 @@
 unsigned int* compress(
 		unsigned int* data_cpu,
 		unsigned int dataSize,
+		unsigned int* outputSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);

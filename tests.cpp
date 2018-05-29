@@ -81,7 +81,9 @@ bool divideIntoWordsTest()
 		11,12,13,14,15,16,17,18,19,20,
 		21,22,23,24,25,26,27,28,29,30,
 		31 };
-	unsigned int* results = compress(data, 31, NULL, NULL, NULL);
+
+	unsigned int compressedSize;
+	unsigned int* results = compress(data, 31, &compressedSize, NULL, NULL, NULL);
 
 	unsigned int expected[32];
 	expected[0] = 0x7FFFFFFF & data[0];
@@ -113,8 +115,8 @@ bool extendDataTest() {
 	for (int i = 5; i < 32; i++) {
 		expected[i] = BIT31;
 	}
-
-	unsigned int* res = compress(data, 31, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 31, &compressedSize, NULL, NULL, NULL);
 
 	ASSERT_32(res, expected)
 
@@ -137,8 +139,8 @@ TEST_DEC(warpCompressionTest)
 //	data[7] = ONES >> 8;
 
 	unsigned int expected[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
-
-	unsigned int* res = compress(data, 31, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 31, &compressedSize, NULL, NULL, NULL);
 
 	ASSERT(res, expected, 6);
 
@@ -149,7 +151,8 @@ TEST_DEC(blockCompressionTest)
 	for(int i = 0; i<32; i++){
 		initializeTestData(i*31, data);
 	}
-	unsigned int * res = compress(data, 31*32, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int * res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 
 	unsigned int help[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
 	ASSERT_MODULO(res, help, 6*32, 6);
@@ -157,9 +160,9 @@ TEST_END
 
 TEST_DEC(blockMergeTest)
 	unsigned int data[32*31] = {0};
-
+	unsigned int compressedSize;
 	unsigned int expected[1] = {BIT31 | 1024};
-	unsigned int* res = compress(data, 31*32, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	ASSERT(res, expected, 1);
 TEST_END
 
@@ -170,7 +173,8 @@ TEST_DEC(blockMergeWithOnesStartsTest)
 			data[31*i] = ONES;
 
 	}
-	unsigned int* res = compress(data, 31*32, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int help[] = {BIT3130 | 1, 1, BIT31 | 62 };
 	ASSERT_MODULO(res, help, 3*16,3)
 TEST_END
@@ -183,8 +187,8 @@ TEST_DEC(blockMergeAlternatingTest)
 			data[31*i+j] = ONES;
 		}
 	}
-
-	unsigned int* res = compress(data, 31*32, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[] = {BIT31 | 64, BIT3130 | 64};
 	ASSERT_MODULO(res, expected, 16, 2);
 TEST_END
@@ -195,8 +199,8 @@ TEST_DEC(blockMergeFinalLiterals)
 	for(int i = 0; i < 32; i++){
 		data[31*(i+1) - 1] = 88;
 	}
-
-	unsigned int* res = compress(data, 31*32, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[] = {BIT31 | 31, 44};
 	ASSERT_MODULO(res, expected, 64, 2);
 TEST_END
@@ -205,8 +209,8 @@ TEST_DEC(blockMergeWanderingLiterals)
 	unsigned int data[31*32] = {0};
 
 	generateWanderingTestData(data,0);
-
-	unsigned int* res = compress(data, 31*32, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[93];
 
 	generateWanderingExpectedData(expected, 0);
@@ -219,8 +223,8 @@ TEST_DEC(multiBlockTest)
 	unsigned int data[2*31*32] = {0};
 	generateWanderingTestData(data, 0);
 	generateWanderingTestData(data, 31*32);
-
-	unsigned int* res = compress(data, 2*31*32, NULL, NULL, NULL);
+	unsigned int compressedSize;
+	unsigned int* res = compress(data, 2*31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[93*2];
 	generateWanderingExpectedData(expected, 0);
 	generateWanderingExpectedData(expected, 93);
@@ -231,12 +235,14 @@ TEST_END
 
 TEST_DEC(compressAndDecompressTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	unsigned int data[2*31*32] = {0};
+	unsigned int data[3*31*32] = {0};
 	generateWanderingTestData(data, 0);
 	generateWanderingTestData(data, 31*32);
-	unsigned int* res = compress(data, 2*32*32, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	unsigned int* decomp = decompress(res, 186, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-	ASSERT(decomp, data, 1984)
+	generateWanderingTestData(data, 2*31*32);
+	unsigned int compressedSize, decompressedSize;
+	unsigned int* res = compress(data, 3*32*32, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	ASSERT(decomp, data, decompressedSize)
 	free(decomp);
 
 	printf("Compression \n");

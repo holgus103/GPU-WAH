@@ -199,8 +199,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 			endLengths[id] = 0;
 		}
 			mergeShift = localScan(mergeShift, id);
-			int globalOffset = (blockDim.x * blockDim.y) * blockIdx.x + localScan(count, id);
-			counts[id] = globalOffset - count - mergeShift;
+			int blockOffset = localScan(count, id);
+			counts[id] = blockOffset - count - mergeShift;
 	}
 
 	__syncthreads();
@@ -220,13 +220,15 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 		else if (word == ZEROS) {
 			word = BIT31 | (blockSize + bonus);
 		}
-		output[index] = word;
 
 		// if it's the last thread in block - either processing last word or the last thread of the last warp
 		if((id == (warpSize - 1) && threadIdx.y == (blockDim.y - 1)) || id_global == (dataSize - 1)){
 				blockCounts[blockIdx.x] = index + blockSize + bonus;
 
 		}
+		output[index + (blockDim.x * blockDim.y) * blockIdx.x] = word;
+
+
 	}
 
 
