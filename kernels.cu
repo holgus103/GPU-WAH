@@ -223,7 +223,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 
 		// if it's the last thread in block - either processing last word or the last thread of the last warp
 		if((id == (warpSize - 1) && threadIdx.y == (blockDim.y - 1)) || id_global == (dataSize - 1)){
-				blockCounts[blockIdx.x] = index + blockSize + bonus;
+				blockCounts[blockIdx.x] = index + 1;
 
 		}
 		output[index + (blockDim.x * blockDim.y) * blockIdx.x] = word;

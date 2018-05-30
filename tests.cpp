@@ -28,6 +28,8 @@ bool NAME(){\
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
+#include <cstring>
 
 /*
  * 1. 0 | 8
@@ -259,16 +261,22 @@ TEST_END
 
 TEST_DEC(compressAndDecompressTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 1024;
-	unsigned int data[1024*31*32] = {0};
+	int blocks = 1024*64;
+	int size = 31*32*blocks;
+	unsigned int* data = (unsigned int*)malloc(sizeof(int)*size);
 	for(int j = 0; j < blocks; j++){
 		generateWanderingTestData(data, j*31*32);
 	}
 	unsigned int compressedSize, decompressedSize;
-	unsigned int* res = compress(data, blocks*31*32, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	if(decompressedSize != size){
+		printf("decompressed size does not match");
+		return false;
+	}
 	ASSERT(decomp, data, decompressedSize)
 	free(decomp);
+	free(data);
 
 	printf("Compression \n");
 	printf("Transfer to device: %f \n", c_transferToDevice);
@@ -282,11 +290,33 @@ TEST_DEC(compressAndDecompressTest)
 TEST_END
 
 
+TEST_DEC(zerosTest)
+	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
+	int blocks = 1024;
+	int size = 31*32*blocks; //16MB of ints
+	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
+	std::memset(data, 0, size);
+//	std::ofstream outFile;
+//	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
+//	outFile.write((char*)data, sizeof(int)*size);
+//	outFile.close();
+	unsigned int compressedSize, decompressedSize;
+	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	ASSERT(decomp, data, decompressedSize)
+	free(decomp);
+TEST_END
+
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int size = 31*32 *100; //16MB of imts
+	int blocks = 1024;
+	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-	generateRandomData(data, size, (1 << 4));
+	generateRandomData(data, size, (1 << 2));
+//	std::ofstream outFile;
+//	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
+//	outFile.write((char*)data, sizeof(int)*size);
+//	outFile.close();
 	unsigned int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);

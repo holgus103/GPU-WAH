@@ -12,4 +12,5 @@ bool blockMergeWanderingLiterals();
 bool multiBlockTest();
 bool compressAndDecompressTest();
 bool randomDataTest();
+bool zerosTest();
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN);

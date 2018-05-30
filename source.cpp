@@ -18,6 +18,7 @@ int main()
 //	blockMergeWanderingLiterals();
 //	multiBlockTest();
 //	compressAndDecompressTest();
+//	zerosTest();
 	randomDataTest();
 	return 0;
 }
