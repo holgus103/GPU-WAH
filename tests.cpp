@@ -309,10 +309,10 @@ TEST_END
 
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 1024;
+	int blocks = 1024*64;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-	generateRandomData(data, size, (1 << 2));
+	generateRandomData(data, size, (1 << 16));
 //	std::ofstream outFile;
 //	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
 //	outFile.write((char*)data, sizeof(int)*size);
@@ -321,6 +321,9 @@ TEST_DEC(randomDataTest)
 	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, decompressedSize)
+	std::cout << size << std::endl;
+	std::cout << compressedSize << std::endl;
+	std::cout << decompressedSize <<std::endl;
 	free(decomp);
 TEST_END
 

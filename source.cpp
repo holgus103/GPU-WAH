@@ -7,56 +7,78 @@
 #include <fstream>
 #include <iostream>
 
-int main()
-{
-//	warpCompressionTest();
-//	blockCompressionTest();
-//	blockMergeTest();
-//	blockMergeWithOnesStartsTest();
-//	blockMergeAlternatingTest();
-//	blockMergeFinalLiterals();
-//	blockMergeWanderingLiterals();
-//	multiBlockTest();
-//	compressAndDecompressTest();
-//	zerosTest();
-	randomDataTest();
-	return 0;
-}
-
-//int main(){
-//  std::fstream fs;
-//  fs.open ("results.txt", std::fstream::out | std::fstream::app);
-//
-//	for (int s=30;s<=30;s++) {
-//		for (unsigned int i=1;i<=16;i++) {
-//			float c_transferToDevice, c_transferFromDevice, c_compression;
-//			float d_transferToDevice, d_transferFromDevice, d_decompression;
-//			int dataSize = s*1024*31*32;
-//			unsigned int* dataset = (unsigned int*)malloc((dataSize+1) * sizeof(int));
-//			generateRandomData(dataset, dataSize, 1<<i);
-//
-//			unsigned int compressedSize, decompressedSize;
-//			unsigned int* compressed = compress(dataset,dataSize, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-//			free(dataset);
-//			unsigned int* decompressed = decompress(compressed, compressedSize, &decompressedSize, &d_transferToDevice, &d_decompression, &d_transferFromDevice);
-//			free(compressed);
-//			std::cout << " s: " << s << " i: " << i <<std::endl;
-//			fs << "Compression:" << std::endl;
-//			fs << "Datasize: " <<std::endl;
-//			fs << "Original size: " << dataSize << std::endl;
-//			fs << "Compressed size: " << compressedSize << std::endl;
-//			fs << "Decompressed size: " << decompressedSize << std::endl;
-//			fs << "Compression Ratio: " << ((float)compressedSize)/((float)s*1024*1024) << std::endl;
-//			fs << "Compression transfer to device: " << c_transferToDevice << std::endl;
-//			fs << "Compression time: " << c_compression << std::endl;
-//			fs << "Compression transfer from device : " << c_transferFromDevice << std::endl;
-//			fs << "Decompression transfer to device: " << d_transferToDevice << std::endl;
-//			fs << "Decompression time: " << d_decompression << std::endl;
-//			fs << "Decompression transfer from device: " << d_transferFromDevice << std::endl;
-//			free(decompressed);
-//
-//		}
-//	}
-//	fs.close();
+//int main()
+//{
+////	warpCompressionTest();
+////	blockCompressionTest();
+////	blockMergeTest();
+////	blockMergeWithOnesStartsTest();
+////	blockMergeAlternatingTest();
+////	blockMergeFinalLiterals();
+////	blockMergeWanderingLiterals();
+////	multiBlockTest();
+////	compressAndDecompressTest();
+////	zerosTest();
+//	randomDataTest();
 //	return 0;
 //}
+
+int main(){
+  std::fstream fs;
+  fs.open ("results.txt", std::fstream::out | std::fstream::app);
+  // write headers
+	fs << "Original size, ";
+	fs << "Compressed size, ";
+	fs << "Decompressed size, ";
+	fs << "Density, ";
+	fs << "Compression Ratio, ";
+	fs << "Compression transfer to device, ";
+	fs << "Compression time, ";
+	fs << "Compression transfer from device, ";
+	fs << "Decompression transfer to device, ";
+	fs << "Decompression time,";
+	fs << "Decompression transfer from device" << std::endl;
+	for (int s=1;s<=64;s<<=1) {
+		for (unsigned int i=1;i<=16;i++) {
+			float c_globalTransferToDevice = 0, c_globalTransferFromDevice = 0, c_globalCompression = 0;
+			float d_globalTransferToDevice = 0, d_globalTransferFromDevice = 0 , d_globalDecompression = 0;
+			int dataSize = s*1024*31*32;
+			unsigned int* dataset = (unsigned int*)malloc((dataSize+1) * sizeof(int));
+			generateRandomData(dataset, dataSize, 1<<i);
+			int globalCompressedSize, globalDecompressedSize;
+			int repetition = 10;
+			for(int repeat = 0; repeat < repetition; repeat++){
+				float c_transferToDevice, c_transferFromDevice, c_compression;
+				float d_transferToDevice, d_transferFromDevice, d_decompression;
+				unsigned int compressedSize, decompressedSize;
+				unsigned int* compressed = compress(dataset,dataSize, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+				unsigned int* decompressed = decompress(compressed, compressedSize, &decompressedSize, &d_transferToDevice, &d_decompression, &d_transferFromDevice);
+				free(compressed);
+				std::cout << " s: " << s << " i: " << i <<std::endl;
+				c_globalCompression += c_compression;
+				c_globalTransferFromDevice += c_transferFromDevice;
+				c_globalTransferToDevice += c_transferToDevice;
+				d_globalDecompression += d_decompression;
+				d_globalTransferFromDevice += d_transferFromDevice;
+				d_globalTransferToDevice += d_transferToDevice;
+				globalCompressedSize = compressedSize;
+				globalDecompressedSize = decompressedSize;
+				free(decompressed);
+			}
+			fs << dataSize << ",";
+			fs << globalCompressedSize << ", ";
+			fs << globalDecompressedSize << ", ";
+			fs << i << ", ";
+			fs << ((float)globalCompressedSize)/((float)dataSize) << ", ";
+			fs << c_globalTransferToDevice / repetition << ", ";
+			fs << c_globalCompression / repetition << ", ";
+			fs << c_globalTransferFromDevice / repetition << ", ";
+			fs << d_globalTransferToDevice / repetition << ", ";
+			fs << d_globalDecompression / repetition << ", ";
+			fs << d_globalTransferFromDevice / repetition << std::endl;
+			free(dataset);
+		}
+	}
+	fs.close();
+	return 0;
+}
