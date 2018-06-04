@@ -10,4 +10,8 @@ Debug/
 *.pdb
 .metadata/
 RemoteSystemTempFiles/
-/Release/
+*.o
+*.d
+Release/GPU-WAH
+Release/nsightbuilddata
+

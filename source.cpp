@@ -27,17 +27,17 @@ int main(){
   std::fstream fs;
   fs.open ("results.txt", std::fstream::out | std::fstream::app);
   // write headers
-	fs << "Original size, ";
-	fs << "Compressed size, ";
-	fs << "Decompressed size, ";
+	fs << "Original size [Bytes] , ";
+	fs << "Compressed size [Bytes] , ";
+	fs << "Decompressed size [Bytes] , ";
 	fs << "Density, ";
 	fs << "Compression Ratio, ";
-	fs << "Compression transfer to device, ";
-	fs << "Compression time, ";
-	fs << "Compression transfer from device, ";
-	fs << "Decompression transfer to device, ";
-	fs << "Decompression time,";
-	fs << "Decompression transfer from device" << std::endl;
+	fs << "Compression transfer to device [ms], ";
+	fs << "Compression time [ms], ";
+	fs << "Compression transfer from device [ms], ";
+	fs << "Decompression transfer to device [ms], ";
+	fs << "Decompression time [ms],";
+	fs << "Decompression transfer from device [ms]" << std::endl;
 	for (int s=1;s<=64;s<<=1) {
 		for (unsigned int i=1;i<=16;i++) {
 			float c_globalTransferToDevice = 0, c_globalTransferFromDevice = 0, c_globalCompression = 0;
