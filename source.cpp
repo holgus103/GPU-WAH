@@ -27,9 +27,9 @@ int main(){
   std::fstream fs;
   fs.open ("results.txt", std::fstream::out | std::fstream::app);
   // write headers
-	fs << "Original size [Bytes] , ";
-	fs << "Compressed size [Bytes] , ";
-	fs << "Decompressed size [Bytes] , ";
+	fs << "Original size [Int] , ";
+	fs << "Compressed size [Int] , ";
+	fs << "Decompressed size [Int] , ";
 	fs << "Density, ";
 	fs << "Compression Ratio, ";
 	fs << "Compression transfer to device [ms], ";
