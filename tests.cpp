@@ -81,13 +81,14 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 
 bool divideIntoWordsTest()
 {
+	unsigned int* orderingArray;
 	unsigned int data[] = { 1,2,3,4,5,6,7,8,9,10,
 		11,12,13,14,15,16,17,18,19,20,
 		21,22,23,24,25,26,27,28,29,30,
 		31 };
 
 	unsigned int compressedSize;
-	unsigned int* results = compress(data, 31, &compressedSize, NULL, NULL, NULL);
+	unsigned int* results = compress(data, 31, &compressedSize, &orderingArray, NULL, NULL, NULL);
 
 	unsigned int expected[32];
 	expected[0] = 0x7FFFFFFF & data[0];
@@ -99,10 +100,12 @@ bool divideIntoWordsTest()
 
 	std::cout << "Division into words succeeded" << std::endl;
 	free(results);
+	free(orderingArray);
 	return true;
 }
 
 bool extendDataTest() {
+	unsigned int* orderingArray;
 	unsigned int data[31] = { 0 };
 	data[0] = 88;
 	data[3] = 4;
@@ -120,10 +123,10 @@ bool extendDataTest() {
 		expected[i] = BIT31;
 	}
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 31, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31, &compressedSize, &orderingArray, NULL, NULL, NULL);
 
 	ASSERT_32(res, expected)
-
+	free(orderingArray);
 	std::cout << "Extension succeeded" << std::endl;
 	free(res);
 	return true;
@@ -131,6 +134,7 @@ bool extendDataTest() {
 }
 
 TEST_DEC(warpCompressionTest)
+	unsigned int* orderingArray;
 	unsigned int data[31] = {0};
 	generateTestData(data, 0);
 
@@ -144,100 +148,108 @@ TEST_DEC(warpCompressionTest)
 
 	unsigned int expected[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 31, &compressedSize, NULL, NULL, NULL);
-
+	unsigned int* res = compress(data, 31, &compressedSize, &orderingArray, NULL, NULL, NULL);
+	free(orderingArray);
 	ASSERT(res, expected, 6);
 
 TEST_END
 
 TEST_DEC(blockCompressionTest)
 	unsigned int data[32*31] = {0};
+	unsigned int* orderingArray;
 	for(int i = 0; i<32; i++){
 		initializeTestData(i*31, data);
 	}
 	unsigned int compressedSize;
-	unsigned int * res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
-
+	unsigned int * res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
+	free(orderingArray);
 	unsigned int help[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
 	ASSERT_MODULO(res, help, 6*32, 6);
 TEST_END
 
 TEST_DEC(blockMergeTest)
+	unsigned int* orderingArray;
 	unsigned int data[32*31] = {0};
 	unsigned int compressedSize;
 	unsigned int expected[1] = {BIT31 | 1024};
-	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
 	ASSERT(res, expected, 1);
+	free(orderingArray);
 TEST_END
 
 TEST_DEC(blockMergeWithOnesStartsTest)
 	unsigned int data[32*31] = {0};
-
+	unsigned int* orderingArray;
 	for(int i = 0; i < 32; i+=2){
 			data[31*i] = ONES;
 
 	}
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
 	unsigned int help[] = {BIT3130 | 1, 1, BIT31 | 62 };
 	ASSERT_MODULO(res, help, 3*16,3)
+	free(orderingArray);
 TEST_END
 
 TEST_DEC(blockMergeAlternatingTest)
 	unsigned int data[32*31] = {0};
-
+	unsigned int* orderingArray;
 	for(int i = 2; i < 32; i+=4){
 		for(int j = 0; j < 62; j++){
 			data[31*i+j] = ONES;
 		}
 	}
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
 	unsigned int expected[] = {BIT31 | 64, BIT3130 | 64};
 	ASSERT_MODULO(res, expected, 16, 2);
+	free(orderingArray);
 TEST_END
 
 TEST_DEC(blockMergeFinalLiterals)
 	unsigned int data[31*32] = {0};
-
+	unsigned int* orderingArray;
 	for(int i = 0; i < 32; i++){
 		data[31*(i+1) - 1] = 88;
 	}
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
 	unsigned int expected[] = {BIT31 | 31, 44};
 	ASSERT_MODULO(res, expected, 64, 2);
+	free(orderingArray);
 TEST_END
 
 TEST_DEC(blockMergeWanderingLiterals)
 	unsigned int data[31*32] = {0};
-
+	unsigned int* orderingArray;
 	generateWanderingTestData(data,0);
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
 	unsigned int expected[93];
 
 	generateWanderingExpectedData(expected, 0);
-
+	free(orderingArray);
 	ASSERT(res, expected, 93)
 
 TEST_END
 
 TEST_DEC(multiBlockTest)
+	unsigned int* orderingArray;
 	unsigned int data[2*31*32] = {0};
 	generateWanderingTestData(data, 0);
 	generateWanderingTestData(data, 31*32);
 	unsigned int compressedSize;
-	unsigned int* res = compress(data, 2*31*32, &compressedSize, NULL, NULL, NULL);
+	unsigned int* res = compress(data, 2*31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
 	unsigned int expected[93*2];
 	generateWanderingExpectedData(expected, 0);
 	generateWanderingExpectedData(expected, 93);
-
+	free(orderingArray);
 	ASSERT(res, expected, 186);
 
 TEST_END
 
 TEST_DEC(compressAndDecompressTest)
+	unsigned int* orderingArray;
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	int blocks = 1024*64;
 	int size = 31*32*blocks;
@@ -246,7 +258,8 @@ TEST_DEC(compressAndDecompressTest)
 		generateWanderingTestData(data, j*31*32);
 	}
 	unsigned int compressedSize, decompressedSize;
-	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+
+	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	if(decompressedSize != size){
 		printf("decompressed size does not match");
@@ -255,6 +268,7 @@ TEST_DEC(compressAndDecompressTest)
 	ASSERT(decomp, data, decompressedSize)
 	free(decomp);
 	free(data);
+	free(orderingArray);
 
 	printf("Compression \n");
 	printf("Transfer to device: %f \n", c_transferToDevice);
@@ -271,6 +285,7 @@ TEST_END
 TEST_DEC(zerosTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	int blocks = 1024;
+	unsigned int* orderingArray;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
 	std::memset(data, 0, size);
@@ -279,15 +294,17 @@ TEST_DEC(zerosTest)
 //	outFile.write((char*)data, sizeof(int)*size);
 //	outFile.close();
 	unsigned int compressedSize, decompressedSize;
-	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, decompressedSize)
 	free(decomp);
+	free(orderingArray);
 TEST_END
 
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	int blocks = 1024*64;
+	unsigned int* orderingArray;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
 	generateRandomData(data, size, (1 << 16));
@@ -296,13 +313,14 @@ TEST_DEC(randomDataTest)
 //	outFile.write((char*)data, sizeof(int)*size);
 //	outFile.close();
 	unsigned int compressedSize, decompressedSize;
-	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, decompressedSize)
 	std::cout << size << std::endl;
 	std::cout << compressedSize << std::endl;
 	std::cout << decompressedSize <<std::endl;
 	free(decomp);
+	free(orderingArray);
 TEST_END
 
 

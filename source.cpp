@@ -51,10 +51,12 @@ int main(){
 				float c_transferToDevice, c_transferFromDevice, c_compression;
 				float d_transferToDevice, d_transferFromDevice, d_decompression;
 				unsigned int compressedSize, decompressedSize;
-				unsigned int* compressed = compress(dataset,dataSize, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+				unsigned int * orderingArray;
+				unsigned int* compressed = compress(dataset,dataSize, &compressedSize, &orderingArray, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 				unsigned int* decompressed = decompress(compressed, compressedSize, &decompressedSize, &d_transferToDevice, &d_decompression, &d_transferFromDevice);
 				ASSERT(decompressed, dataset, dataSize);
 				free(compressed);
+				free(orderingArray);
 				std::cout << "data matches" << std::endl;
 				std::cout << " s: " << s << " i: " << i <<std::endl;
 				c_globalCompression += c_compression;

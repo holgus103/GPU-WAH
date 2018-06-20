@@ -15,6 +15,14 @@
 #include <thrust/device_ptr.h>
 #include "timeMeasuring.h"
 
+#define FREE_ALL \
+	if(data_gpu) cudaFree(data_gpu);\
+	if(compressed_gpu) cudaFree(compressed_gpu);\
+	if(blockCounts_gpu) cudaFree(blockCounts_gpu);\
+	if(finalOutput_gpu) cudaFree(finalOutput_gpu);\
+	if(orderArray_gpu) cudaFree(orderArray_gpu);\
+	if(sizeCounter_gpu) cudaFree(sizeCounter_gpu);
+
 
 struct is_zero
 {
@@ -26,11 +34,13 @@ struct is_zero
 };
 
 
+
 // datasize is in integers!
 unsigned int* compress(
 		unsigned int* data_cpu,
 		unsigned int dataSize,
 		unsigned int* outSize,
+		unsigned int** orderingArray,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -51,7 +61,7 @@ unsigned int* compress(
 		blockCount++;
 	}
 
-	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *finalOutput_gpu;
+	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *finalOutput_gpu, *orderArray_gpu, *sizeCounter_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
 	long long maxExpectedSize = 8*sizeof(int)*dataSize;
@@ -66,28 +76,36 @@ unsigned int* compress(
 	dim3 blockSize = dim3(32, 32, 1);
 
 	// allocate memory on the device
+	if(cudaSuccess != cudaMalloc((void**)&sizeCounter_gpu, sizeof(int))){
+		std::cout << "Could not allocate space for size counter" << std::endl;
+		FREE_ALL
+		return NULL;
+	}
+	if(cudaSuccess != cudaMalloc((void**)&orderArray_gpu, blockCount * sizeof(int))){
+		std::cout << "Could not allocate space for order array" << std::endl;
+		FREE_ALL
+		return NULL;
+	}
 	if(cudaSuccess != cudaMalloc((void**)&data_gpu, dataSize * sizeof(int))){
 		std::cout << "Could not allocate space for the data" << std::endl;
+		FREE_ALL
 		return NULL;
 	}
 	if(cudaSuccess != cudaMalloc((void**)&compressed_gpu, maxExpectedSize * sizeof(int))){
 		std::cout << "Could not allocate space for the compressed output" << std::endl;
-		cudaFree(data_gpu);
+		FREE_ALL
 		return NULL;
 	}
 	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(int))){
 		std::cout << "Could not allocate space for the block sizes" << std::endl;
-		cudaFree(data_gpu);
-		cudaFree(compressed_gpu);
+		FREE_ALL
 		return NULL;
 	}
 
 	// copy input
 	if(cudaSuccess != cudaMemcpy(data_gpu, data_cpu, dataSize*sizeof(int), cudaMemcpyHostToDevice)){
 		std::cout << "Could not copy input" << std::endl;
-		cudaFree(data_gpu);
-		cudaFree(compressed_gpu);
-		cudaFree(blockCounts_gpu);
+		FREE_ALL
 		return NULL;
 	}
 
@@ -102,42 +120,34 @@ unsigned int* compress(
 	cudaEventRecord(start,0);
 
 	// call compression kernel
-	compressData<<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, dataSize);
+	compressData<<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, orderArray_gpu, sizeCounter_gpu, dataSize);
 
 	// remove unnecessary data
 	cudaFree((void*)data_gpu);
-	thrust::device_ptr<unsigned int> blockCountsPtr(blockCounts_gpu);
 
 
-	unsigned int lastWordNumber;
-
-	if(cudaSuccess != cudaMemcpy(&lastWordNumber, blockCounts_gpu + (blockCount - 1), sizeof(int), cudaMemcpyDeviceToHost)){
+	unsigned int* orderArray = (unsigned int*)malloc(sizeof(int) * blockCount);
+	(*orderingArray) = orderArray;
+	if(cudaSuccess != cudaMemcpy(&orderArray, orderArray_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block count" << std::endl;
-		cudaFree(compressed_gpu);
-		cudaFree(blockCounts_gpu);
+		FREE_ALL
 		return NULL;
 	}
 
-	thrust::exclusive_scan(blockCountsPtr, blockCountsPtr + blockCount, blockCountsPtr);
-	unsigned int lastBlockOffset;
+	unsigned int outputSize = 0;;
 
-	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&outputSize, sizeCounter_gpu, sizeof(int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block offset" << std::endl;
-		cudaFree(compressed_gpu);
-		cudaFree(blockCounts_gpu);
+		FREE_ALL
 		return NULL;
 	}
 
-	unsigned int outputSize = lastBlockOffset + lastWordNumber;
 	SAFE_ASSIGN(outSize, outputSize)
 	if(cudaSuccess != cudaMalloc((void**)&finalOutput_gpu, sizeof(int) * outputSize)){
 		std::cout << "Could not allocate final Output" << std::endl;
-		cudaFree(compressed_gpu);
-		cudaFree(blockCounts_gpu);
+		FREE_ALL
 		return NULL;
 	}
-	// call merge kernel
-	moveData<<<blockCount, blockSize>>>(compressed_gpu, finalOutput_gpu, blockCounts_gpu);
 
 	// get compression time
 	cudaEventCreate(&stop);
@@ -160,6 +170,7 @@ unsigned int* compress(
 	cudaFree((void*)compressed_gpu);
 	cudaFree((void*)blockCounts_gpu);
 	cudaFree((void*)finalOutput_gpu);
+	cudaFree((void*)orderArray_gpu);
 
 	// get transfer time
 	cudaEventCreate(&stop);

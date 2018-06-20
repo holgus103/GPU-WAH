@@ -39,7 +39,13 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 	}
 }
 
-__global__ void compressData(unsigned int* data, unsigned int* output, unsigned int* blockCounts, int dataSize) {
+__global__ void compressData(
+		unsigned int* data,
+		unsigned int* output,
+		unsigned int* blockCounts,
+		unsigned int* orderingArray,
+		unsigned int* sizeCounter_gpu,
+		int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
 	// length of the last word in a warp
@@ -50,6 +56,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	__shared__ int beginnings[32];
 	// array indicating whether the last thread of a warp has been merged
 	__shared__ bool merged[32];
+	// real block offset using atomic add
+	__shared__ int outputOffset;
 
 
 	// get thread id
@@ -208,11 +216,11 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	IF_LAST{
 		idle = merged[threadIdx.y];
 	}
-
+	int bonus = 0;
 	// get global offset for warp and warp offset
 	if(!idle){
 		// first word in a warp gets a bonus
-		int bonus = index == 0 ? endLengths[threadIdx.y] : 0;
+		index = index == 0 ? endLengths[threadIdx.y] : 0;
 		index += counts[threadIdx.y];
 		if (word == ONES31) {
 			word = BIT3130 | (blockSize + bonus);
@@ -224,23 +232,19 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 		// if it's the last thread in block - either processing last word or the last thread of the last warp
 		if((id == (warpSize - 1) && threadIdx.y == (blockDim.y - 1)) || id_global == (dataSize - 1)){
 				blockCounts[blockIdx.x] = index + 1;
+				outputOffset = atomicAdd(sizeCounter_gpu, (index + 1));
 
 		}
-		output[index + (blockDim.x * blockDim.y) * blockIdx.x] = word;
 
 
 	}
+	__syncthreads();
+	if(!idle){
+		orderingArray[blockIdx.x] = outputOffset;
+		output[index + outputOffset] = word;
+	}
 
 
-}
-
-__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts){
-	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
-	unsigned int word = initialOutput[globalId];
-	if(word == 0) return;
-	unsigned int blockOffset = blockCounts[blockIdx.x];
-	int blockId = threadIdx.x + threadIdx.y * blockDim.x;
-	finalOutput[blockOffset + blockId] = word;
 }
 
 __global__ void getCounts(unsigned int* data_gpu, unsigned int* counts_gpu, int dataSize){
