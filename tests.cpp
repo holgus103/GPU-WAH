@@ -303,7 +303,7 @@ TEST_END
 
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 1024*64;
+	int blocks = 1;
 	unsigned int* orderingArray;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);

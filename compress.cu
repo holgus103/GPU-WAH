@@ -19,7 +19,6 @@
 	if(data_gpu) cudaFree(data_gpu);\
 	if(compressed_gpu) cudaFree(compressed_gpu);\
 	if(blockCounts_gpu) cudaFree(blockCounts_gpu);\
-	if(finalOutput_gpu) cudaFree(finalOutput_gpu);\
 	if(orderArray_gpu) cudaFree(orderArray_gpu);\
 	if(sizeCounter_gpu) cudaFree(sizeCounter_gpu);
 
@@ -61,7 +60,7 @@ unsigned int* compress(
 		blockCount++;
 	}
 
-	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *finalOutput_gpu, *orderArray_gpu, *sizeCounter_gpu;
+	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *orderArray_gpu, *sizeCounter_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
 	long long maxExpectedSize = 8*sizeof(int)*dataSize;
@@ -143,11 +142,6 @@ unsigned int* compress(
 	}
 
 	SAFE_ASSIGN(outSize, outputSize)
-	if(cudaSuccess != cudaMalloc((void**)&finalOutput_gpu, sizeof(int) * outputSize)){
-		std::cout << "Could not allocate final Output" << std::endl;
-		FREE_ALL
-		return NULL;
-	}
 
 	// get compression time
 	cudaEventCreate(&stop);
@@ -162,14 +156,13 @@ unsigned int* compress(
 	// allocate memory for results
 	unsigned int* compressed_cpu = (unsigned int*)malloc(sizeof(int)* outputSize);
 	// copy compressed data
-	if(cudaSuccess != cudaMemcpy((void*)compressed_cpu, (void*)finalOutput_gpu, outputSize * sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy((void*)compressed_cpu, (void*)compressed_gpu, outputSize * sizeof(int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy final output" << std::endl;
 	}
 
 	// free gpu memory
 	cudaFree((void*)compressed_gpu);
 	cudaFree((void*)blockCounts_gpu);
-	cudaFree((void*)finalOutput_gpu);
 	cudaFree((void*)orderArray_gpu);
 
 	// get transfer time

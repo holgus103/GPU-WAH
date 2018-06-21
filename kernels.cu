@@ -220,7 +220,7 @@ __global__ void compressData(
 	// get global offset for warp and warp offset
 	if(!idle){
 		// first word in a warp gets a bonus
-		index = index == 0 ? endLengths[threadIdx.y] : 0;
+		bonus = index == 0 ? endLengths[threadIdx.y] : 0;
 		index += counts[threadIdx.y];
 		if (word == ONES31) {
 			word = BIT3130 | (blockSize + bonus);
@@ -230,7 +230,7 @@ __global__ void compressData(
 		}
 
 		// if it's the last thread in block - either processing last word or the last thread of the last warp
-		if((id == (warpSize - 1) && threadIdx.y == (blockDim.y - 1)) || id_global == (dataSize - 1)){
+		if((id == (warpSize - 1) && threadIdx.y == (blockDim.y - 1))){
 				blockCounts[blockIdx.x] = index + 1;
 				outputOffset = atomicAdd(sizeCounter_gpu, (index + 1));
 
