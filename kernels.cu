@@ -321,5 +321,34 @@ __global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_g
 
 }
 
+__global__ void reoderKernel(
+		unsigned int* blockSizes,
+		unsigned int* offsets,
+		unsigned int* outputOffsets,
+		int blockCount,
+		unsigned int* data,
+		int dataSize,
+		unsigned int* output)
+{
+	unsigned int globalId = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
+	if(globalId >= dataSize) return;
+
+	int blockIndex = 0;
+	int blockOffset = 0;
+
+	// find current block
+	for(int i=0;i<blockCount; i++){
+		// find max value smaller than globalId
+		if(offsets[i] <= globalId && offsets[i] >= blockOffset){
+			blockIndex = i;
+			blockOffset = offsets[i];
+		}
+	}
+
+	output[outputOffsets[blockIndex] + globalId - blockOffset]= data[globalId];
+
+
+}
+
 
 

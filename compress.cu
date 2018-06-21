@@ -40,6 +40,8 @@ unsigned int* compress(
 		unsigned int dataSize,
 		unsigned int* outSize,
 		unsigned int** orderingArray,
+		unsigned int* orderingLength,
+		unsigned int** blockSizes,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -59,6 +61,8 @@ unsigned int* compress(
 	if(dataSize % (31*32)> 0){
 		blockCount++;
 	}
+	// assign blockCount
+	(*orderingLength) = blockCount;
 
 	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *orderArray_gpu, *sizeCounter_gpu;
 
@@ -124,11 +128,22 @@ unsigned int* compress(
 	// remove unnecessary data
 	cudaFree((void*)data_gpu);
 
+	// allocate memory for block sizes
+	(*blockSizes) = (unsigned int*)malloc(sizeof(int) *blockCount);
 
+	// copy block sizes
+	if(cudaSuccess != cudaMemcpy((*blockSizes), blockCounts_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
+		std::cout << "Could not copy last block counts" << std::endl;
+		FREE_ALL
+		return NULL;
+	}
+
+	// allocate ordering array
 	unsigned int* orderArray = (unsigned int*)malloc(sizeof(int) * blockCount);
 	(*orderingArray) = orderArray;
-	if(cudaSuccess != cudaMemcpy(&orderArray, orderArray_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
-		std::cout << "Could not copy last block count" << std::endl;
+	// copy ordering array
+	if(cudaSuccess != cudaMemcpy(orderArray, orderArray_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
+		std::cout << "Could not copy ordering array" << std::endl;
 		FREE_ALL
 		return NULL;
 	}

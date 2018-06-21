@@ -90,3 +90,43 @@ unsigned int* decompress(
 
 	return output_cpu;
 }
+
+unsigned int* reorder(unsigned int* blockSizes, unsigned int* offsets, int blockCount, unsigned int* data, int dataSize){
+
+	unsigned int* blockSizes_gpu, * offsets_gpu, *data_gpu, *outputOffsets_gpu, *output_gpu;
+	// allocate gpu memory
+	cudaMalloc((void**)&blockSizes_gpu, sizeof(int)*blockCount);
+	cudaMalloc((void**)&offsets_gpu, sizeof(int)*blockCount);
+	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
+	cudaMalloc((void**)&output_gpu, sizeof(int)*dataSize);
+	cudaMalloc((void**)&outputOffsets_gpu, sizeof(int)*dataSize);
+
+	cudaMemcpy(blockSizes_gpu, blockSizes, sizeof(int) * blockCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(offsets_gpu, offsets, sizeof(int) * blockCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(data_gpu, data, sizeof(int) * dataSize, cudaMemcpyHostToDevice);
+
+	thrust::device_ptr<unsigned int> pBlockSizes(blockSizes_gpu);
+	thrust::device_ptr<unsigned int> pOutputOffets(outputOffsets_gpu);
+
+	thrust::exclusive_scan(pBlockSizes, pBlockSizes + blockCount, pOutputOffets);
+
+	int b = dataSize / 1024;
+
+	if(dataSize % 1024 > 0){
+		b++;
+	}
+
+	reoderKernel<<<b, dim3(32, 32)>>>(blockSizes_gpu, offsets_gpu, outputOffsets_gpu, blockCount, data_gpu, dataSize, output_gpu);
+
+
+	unsigned int* output = (unsigned int*) malloc(sizeof(int) * dataSize);
+	cudaMemcpy(output, output_gpu, sizeof(int) * dataSize, cudaMemcpyDeviceToHost);
+	cudaFree(blockSizes_gpu);
+	cudaFree(offsets_gpu);
+	cudaFree(data_gpu);
+	cudaFree(outputOffsets_gpu);
+	cudaFree(output_gpu);
+
+	return output;
+
+}

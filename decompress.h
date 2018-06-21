@@ -16,6 +16,8 @@ unsigned int* decompress(
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);
 
+unsigned int* reorder(unsigned int* blockSizes, unsigned int* offsets, int blockCount, unsigned int* data, int dataSize);
+
 
 
 #endif /* DECOMPRESS_H_ */

@@ -43,4 +43,13 @@ __global__ void mergeWords(
 		int dataSize
 		);
 
+__global__ void reoderKernel(
+		unsigned int* blockSizes,
+		unsigned int* offsets,
+		unsigned int* outputOffsets,
+		int blockCount,
+		unsigned int* data,
+		int dataSize,
+		unsigned int* output
+		);
 #endif /* KERNELS_H_ */
