@@ -42,8 +42,8 @@ void generateWanderingTestData(unsigned int* arr, int baseIndex){
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN) {
 	int res;
 	int treshold=RAND_MAX/everyN;
-	for (int i=0;i<size*32;i++) {
-		int word=i>>5; // /32
+	for (long long int i=0;i<size*32;i++) {
+		long long int word=i>>5; // /32
 		int off=i&31; // %32
 		if (off==0) {
 			//tab[word]=0;
@@ -303,20 +303,17 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 20;
+	float r_transferToDevice, r_transferFromDevice, r_reordering;
+	int blocks = 256 * 1024;
 	unsigned int* orderingArray;
 	unsigned int* blockSizes;
 	unsigned int blockCount;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-	generateRandomData(data, size, (1 << 16));
-//	std::ofstream outFile;
-//	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
-//	outFile.write((char*)data, sizeof(int)*size);
-//	outFile.close();
+	generateRandomData(data, size, (1 << 5));
 	unsigned int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	unsigned int* reordered = reorder(blockSizes, orderingArray, blockCount, res, compressedSize);
+	unsigned int* reordered = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);
 	unsigned int* decomp = decompress(reordered, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, decompressedSize)
 	std::cout << size << std::endl;

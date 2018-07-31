@@ -91,7 +91,24 @@ unsigned int* decompress(
 	return output_cpu;
 }
 
-unsigned int* reorder(unsigned int* blockSizes, unsigned int* offsets, int blockCount, unsigned int* data, int dataSize){
+unsigned int* reorder(
+		unsigned int* blockSizes,
+		unsigned int* offsets,
+		int blockCount,
+		unsigned int* data,
+		int dataSize,
+		float* pTransferToDeviceTime,
+		float* pReoderingTime,
+		float* ptranserFromDeviceTime
+		){
+
+	// times to be measured
+	float transferToDeviceTime;
+	float reorderingTime;
+	float transferFromDeviceTime;
+
+	CREATE_TIMER
+	START_TIMER
 
 	unsigned int* blockSizes_gpu, * offsets_gpu, *data_gpu, *outputOffsets_gpu, *output_gpu;
 	// allocate gpu memory
@@ -104,6 +121,11 @@ unsigned int* reorder(unsigned int* blockSizes, unsigned int* offsets, int block
 	cudaMemcpy(blockSizes_gpu, blockSizes, sizeof(int) * blockCount, cudaMemcpyHostToDevice);
 	cudaMemcpy(offsets_gpu, offsets, sizeof(int) * blockCount, cudaMemcpyHostToDevice);
 	cudaMemcpy(data_gpu, data, sizeof(int) * dataSize, cudaMemcpyHostToDevice);
+
+	STOP_TIMER
+	GET_RESULT(transferToDeviceTime)
+
+	START_TIMER
 
 	thrust::device_ptr<unsigned int> pBlockSizes(blockSizes_gpu);
 	thrust::device_ptr<unsigned int> pOutputOffets(outputOffsets_gpu);
@@ -118,6 +140,10 @@ unsigned int* reorder(unsigned int* blockSizes, unsigned int* offsets, int block
 
 	reoderKernel<<<b, dim3(32, 32)>>>(blockSizes_gpu, offsets_gpu, outputOffsets_gpu, blockCount, data_gpu, dataSize, output_gpu);
 
+	STOP_TIMER
+	GET_RESULT(reorderingTime)
+
+	START_TIMER
 
 	unsigned int* output = (unsigned int*) malloc(sizeof(int) * dataSize);
 	cudaMemcpy(output, output_gpu, sizeof(int) * dataSize, cudaMemcpyDeviceToHost);
@@ -126,6 +152,14 @@ unsigned int* reorder(unsigned int* blockSizes, unsigned int* offsets, int block
 	cudaFree(data_gpu);
 	cudaFree(outputOffsets_gpu);
 	cudaFree(output_gpu);
+
+
+	STOP_TIMER
+	GET_RESULT(transferFromDeviceTime)
+
+	SAFE_ASSIGN(pReoderingTime, reorderingTime);
+	SAFE_ASSIGN(pTransferToDeviceTime, transferToDeviceTime);
+	SAFE_ASSIGN(ptranserFromDeviceTime, transferFromDeviceTime);
 
 	return output;
 
