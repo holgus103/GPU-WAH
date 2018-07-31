@@ -7,23 +7,23 @@
 #include <fstream>
 #include <iostream>
 
-//int main()
-//{
-////	warpCompressionTest();
-////	blockCompressionTest();
-////	blockMergeTest();
-////	blockMergeWithOnesStartsTest();
-////	blockMergeAlternatingTest();
-////	blockMergeFinalLiterals();
-////	blockMergeWanderingLiterals();
-////	multiBlockTest();
-////	compressAndDecompressTest();
-////	zerosTest();
-//	randomDataTest();
-//	return 0;
-//}
+int main()
+{
+//	warpCompressionTest();
+//	blockCompressionTest();
+//	blockMergeTest();
+//	blockMergeWithOnesStartsTest();
+//	blockMergeAlternatingTest();
+//	blockMergeFinalLiterals();
+//	blockMergeWanderingLiterals();
+//	multiBlockTest();
+//	compressAndDecompressTest();
+//	zerosTest();
+	randomDataTest();
+	return 0;
+}
 
-int main(){
+int mainM(){
   std::fstream fs;
   fs.open ("results.txt", std::fstream::out | std::fstream::app);
   // write headers
@@ -42,7 +42,7 @@ int main(){
 		for (unsigned int i=1;i<=16;i++) {
 			float c_globalTransferToDevice = 0, c_globalTransferFromDevice = 0, c_globalCompression = 0;
 			float d_globalTransferToDevice = 0, d_globalTransferFromDevice = 0 , d_globalDecompression = 0;
-			int dataSize = s*1024*31*32;
+			unsigned long long int dataSize = s*1024*31*32;
 			unsigned int* dataset = (unsigned int*)malloc((dataSize+1) * sizeof(int));
 			generateRandomData(dataset, dataSize, 1<<i);
 			int globalCompressedSize, globalDecompressedSize;
@@ -50,8 +50,8 @@ int main(){
 			for(int repeat = 0; repeat < repetition; repeat++){
 				float c_transferToDevice, c_transferFromDevice, c_compression;
 				float d_transferToDevice, d_transferFromDevice, d_decompression;
-				unsigned int compressedSize, decompressedSize;
-				unsigned int* compressed = compress(dataset,dataSize, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+				unsigned long long int compressedSize, decompressedSize;
+				unsigned int* compressed = compress(dataset, dataSize, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 				unsigned int* decompressed = decompress(compressed, compressedSize, &decompressedSize, &d_transferToDevice, &d_decompression, &d_transferFromDevice);
 				ASSERT(decompressed, dataset, dataSize);
 				free(compressed);

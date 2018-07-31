@@ -42,8 +42,8 @@ void generateWanderingTestData(unsigned int* arr, int baseIndex){
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN) {
 	int res;
 	int treshold=RAND_MAX/everyN;
-	for (int i=0;i<size*32;i++) {
-		int word=i>>5; // /32
+	for (long long int i=0;i<size*32;i++) {
+		long long int word=i>>5; // /32
 		int off=i&31; // %32
 		if (off==0) {
 			//tab[word]=0;
@@ -86,7 +86,7 @@ bool divideIntoWordsTest()
 		21,22,23,24,25,26,27,28,29,30,
 		31 };
 
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int* results = compress(data, 31, &compressedSize, NULL, NULL, NULL);
 
 	unsigned int expected[32];
@@ -119,7 +119,7 @@ bool extendDataTest() {
 	for (int i = 5; i < 32; i++) {
 		expected[i] = BIT31;
 	}
-	unsigned int compressedSize;
+	unsigned long long  int compressedSize;
 	unsigned int* res = compress(data, 31, &compressedSize, NULL, NULL, NULL);
 
 	ASSERT_32(res, expected)
@@ -143,7 +143,7 @@ TEST_DEC(warpCompressionTest)
 //	data[7] = ONES >> 8;
 
 	unsigned int expected[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
-	unsigned int compressedSize;
+	unsigned long long  int compressedSize;
 	unsigned int* res = compress(data, 31, &compressedSize, NULL, NULL, NULL);
 
 	ASSERT(res, expected, 6);
@@ -155,7 +155,7 @@ TEST_DEC(blockCompressionTest)
 	for(int i = 0; i<32; i++){
 		initializeTestData(i*31, data);
 	}
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int * res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 
 	unsigned int help[6] = {8, 3|BIT31, 4, 1|BIT31, 2|BIT3130, 24|BIT31};
@@ -164,7 +164,7 @@ TEST_END
 
 TEST_DEC(blockMergeTest)
 	unsigned int data[32*31] = {0};
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int expected[1] = {BIT31 | 1024};
 	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	ASSERT(res, expected, 1);
@@ -177,7 +177,7 @@ TEST_DEC(blockMergeWithOnesStartsTest)
 			data[31*i] = ONES;
 
 	}
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int help[] = {BIT3130 | 1, 1, BIT31 | 62 };
 	ASSERT_MODULO(res, help, 3*16,3)
@@ -191,7 +191,7 @@ TEST_DEC(blockMergeAlternatingTest)
 			data[31*i+j] = ONES;
 		}
 	}
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[] = {BIT31 | 64, BIT3130 | 64};
 	ASSERT_MODULO(res, expected, 16, 2);
@@ -203,7 +203,7 @@ TEST_DEC(blockMergeFinalLiterals)
 	for(int i = 0; i < 32; i++){
 		data[31*(i+1) - 1] = 88;
 	}
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[] = {BIT31 | 31, 44};
 	ASSERT_MODULO(res, expected, 64, 2);
@@ -213,7 +213,7 @@ TEST_DEC(blockMergeWanderingLiterals)
 	unsigned int data[31*32] = {0};
 
 	generateWanderingTestData(data,0);
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int* res = compress(data, 31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[93];
 
@@ -227,7 +227,7 @@ TEST_DEC(multiBlockTest)
 	unsigned int data[2*31*32] = {0};
 	generateWanderingTestData(data, 0);
 	generateWanderingTestData(data, 31*32);
-	unsigned int compressedSize;
+	unsigned long long int compressedSize;
 	unsigned int* res = compress(data, 2*31*32, &compressedSize, NULL, NULL, NULL);
 	unsigned int expected[93*2];
 	generateWanderingExpectedData(expected, 0);
@@ -245,7 +245,7 @@ TEST_DEC(compressAndDecompressTest)
 	for(int j = 0; j < blocks; j++){
 		generateWanderingTestData(data, j*31*32);
 	}
-	unsigned int compressedSize, decompressedSize;
+	unsigned long long int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	if(decompressedSize != size){
@@ -278,7 +278,7 @@ TEST_DEC(zerosTest)
 //	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
 //	outFile.write((char*)data, sizeof(int)*size);
 //	outFile.close();
-	unsigned int compressedSize, decompressedSize;
+	unsigned long long int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, decompressedSize)
@@ -287,21 +287,21 @@ TEST_END
 
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 1024*64;
+	int blocks = 1024*128;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-	generateRandomData(data, size, (1 << 16));
+	generateRandomData(data, size, (1 << 4));
 //	std::ofstream outFile;
 //	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
 //	outFile.write((char*)data, sizeof(int)*size);
 //	outFile.close();
-	unsigned int compressedSize, decompressedSize;
+	unsigned long long int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-	ASSERT(decomp, data, decompressedSize)
 	std::cout << size << std::endl;
 	std::cout << compressedSize << std::endl;
 	std::cout << decompressedSize <<std::endl;
+	ASSERT(decomp, data, size)
 	free(decomp);
 TEST_END
 

@@ -10,8 +10,8 @@
 
 unsigned int* decompress(
 		unsigned int* data,
-		unsigned int dataSize,
-		unsigned int* outSize,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);

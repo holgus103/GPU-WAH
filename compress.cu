@@ -29,8 +29,8 @@ struct is_zero
 // datasize is in integers!
 unsigned int* compress(
 		unsigned int* data_cpu,
-		unsigned int dataSize,
-		unsigned int* outSize,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -51,10 +51,11 @@ unsigned int* compress(
 		blockCount++;
 	}
 
-	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *finalOutput_gpu;
+	unsigned int *data_gpu, *compressed_gpu, *finalOutput_gpu;
+	unsigned long long int* blockCounts_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
-	long long maxExpectedSize = 8*sizeof(int)*dataSize;
+	unsigned long long int maxExpectedSize = 8*sizeof(int)*dataSize;
 	if(maxExpectedSize % 31 > 0){
 		maxExpectedSize /= 31;
 		maxExpectedSize++;
@@ -75,7 +76,7 @@ unsigned int* compress(
 		cudaFree(data_gpu);
 		return NULL;
 	}
-	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(int))){
+	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(unsigned long long int))){
 		std::cout << "Could not allocate space for the block sizes" << std::endl;
 		cudaFree(data_gpu);
 		cudaFree(compressed_gpu);
@@ -106,7 +107,7 @@ unsigned int* compress(
 
 	// remove unnecessary data
 	cudaFree((void*)data_gpu);
-	thrust::device_ptr<unsigned int> blockCountsPtr(blockCounts_gpu);
+	thrust::device_ptr<unsigned long long int> blockCountsPtr(blockCounts_gpu);
 
 
 	unsigned int lastWordNumber;
@@ -121,14 +122,14 @@ unsigned int* compress(
 	thrust::exclusive_scan(blockCountsPtr, blockCountsPtr + blockCount, blockCountsPtr);
 	unsigned int lastBlockOffset;
 
-	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block offset" << std::endl;
 		cudaFree(compressed_gpu);
 		cudaFree(blockCounts_gpu);
 		return NULL;
 	}
 
-	unsigned int outputSize = lastBlockOffset + lastWordNumber;
+	unsigned long long int outputSize = lastBlockOffset + lastWordNumber;
 	SAFE_ASSIGN(outSize, outputSize)
 	if(cudaSuccess != cudaMalloc((void**)&finalOutput_gpu, sizeof(int) * outputSize)){
 		std::cout << "Could not allocate final Output" << std::endl;

@@ -6,8 +6,8 @@
 
 unsigned int* decompress(
 		unsigned int* data,
-		unsigned int dataSize,
-		unsigned int* outSize,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -21,14 +21,15 @@ unsigned int* decompress(
 	CREATE_TIMER
 	START_TIMER
 
-	unsigned int *data_gpu, *counts_gpu, *result_gpu, *finalOutput_gpu, *output_cpu;
+	unsigned int *data_gpu, *result_gpu, *finalOutput_gpu, *output_cpu;
+	unsigned long long int* counts_gpu;
 	int blockCount = dataSize / 1024;
 
 	if(dataSize % 1024 > 0){
 		blockCount++;
 	}
 	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
-	cudaMalloc((void**)&counts_gpu, sizeof(int)*dataSize);
+	cudaMalloc((void**)&counts_gpu, sizeof(unsigned long long int)*dataSize);
 	cudaMemcpy(data_gpu, data, sizeof(int)*dataSize, cudaMemcpyHostToDevice);
 
 	STOP_TIMER
@@ -39,16 +40,16 @@ unsigned int* decompress(
 	// get blocked sizes
 	getCounts<<<blockCount,blockDim>>>(data_gpu, counts_gpu, dataSize);
 	unsigned int lastBlockSize;
-	cudaMemcpy(&lastBlockSize, counts_gpu  + (dataSize - 1), sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(&lastBlockSize, counts_gpu  + (dataSize - 1), sizeof(long long int), cudaMemcpyDeviceToHost);
 	// scan block sizes
-	thrust::device_ptr<unsigned int> countsPtr(counts_gpu);
+	thrust::device_ptr<unsigned long long int> countsPtr(counts_gpu);
 	// get counts
 	thrust::exclusive_scan(countsPtr, countsPtr + dataSize, countsPtr);
 	unsigned int lastOffset;
 //	thrust::inclusive_scan(counts_cpu, counts_cpu + dataSize, counts_cpu);
-	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(int), cudaMemcpyDeviceToHost);
-	int outputSize = lastBlockSize + lastOffset;
-	int realSize = 31*outputSize;
+	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(long long int), cudaMemcpyDeviceToHost);
+	unsigned long long int outputSize = lastBlockSize + lastOffset;
+	unsigned long long int realSize = 31*outputSize;
 
 	if(realSize % 32 > 0){
 		realSize /=32;

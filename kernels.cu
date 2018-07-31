@@ -39,7 +39,7 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 	}
 }
 
-__global__ void compressData(unsigned int* data, unsigned int* output, unsigned int* blockCounts, int dataSize) {
+__global__ void compressData(unsigned int* data, unsigned int* output, unsigned long long int* blockCounts, int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
 	// length of the last word in a warp
@@ -234,7 +234,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 
 }
 
-__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts){
+__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned long long int* blockCounts){
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
 	unsigned int word = initialOutput[globalId];
 	if(word == 0) return;
@@ -243,7 +243,7 @@ __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput,
 	finalOutput[blockOffset + blockId] = word;
 }
 
-__global__ void getCounts(unsigned int* data_gpu, unsigned int* counts_gpu, int dataSize){
+__global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// is within the data range
@@ -263,13 +263,13 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned int* counts_gpu, int 
 
 }
 
-__global__ void decompressWords(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int* result_gpu, int dataSize){
+__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// out of range
 	if(globalId >= dataSize) return;
 	unsigned int word = data_gpu[globalId];
-	int offset = counts_gpu[globalId];
+	unsigned long long int offset = counts_gpu[globalId];
 //	printf("id : %d offset: %d \n", globalId, offset);
 	if((BIT31 & word) > 0){
 
@@ -299,7 +299,7 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned int* counts_gpu
 
 }
 
-__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, int dataSize){
+__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	int id = threadIdx.x;
