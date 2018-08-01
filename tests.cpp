@@ -42,6 +42,7 @@ void generateWanderingTestData(unsigned int* arr, int baseIndex){
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN) {
 	int res;
 	int treshold=RAND_MAX/everyN;
+	srand(1337);
 	for (long long int i=0;i<size*32;i++) {
 		long long int word=i>>5; // /32
 		int off=i&31; // %32
