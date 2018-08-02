@@ -305,18 +305,18 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
-	int blocks = 256 * 1024;
+	int blocks = 1;
 	unsigned long long int* orderingArray;
-	unsigned int* blockSizes;
-	unsigned int blockCount;
+	unsigned long long int* blockSizes;
+	unsigned long long int blockCount;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
 	generateRandomData(data, size, (1 << 5));
-	unsigned int compressedSize, decompressedSize;
+	unsigned long long int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	unsigned int* reordered = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);
-	unsigned int* decomp = decompress(reordered, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-	ASSERT(decomp, data, decompressedSize)
+//	unsigned int* reordered = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	ASSERT(decomp, data, size)
 	std::cout << size << std::endl;
 	std::cout << compressedSize << std::endl;
 	std::cout << decompressedSize <<std::endl;

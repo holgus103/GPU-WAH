@@ -68,7 +68,7 @@ unsigned int* compress(
 	unsigned long long int *blockCounts_gpu, *sizeCounter_gpu, *orderArray_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
-	long long maxExpectedSize = 8*sizeof(int)*dataSize;
+	unsigned long long int maxExpectedSize = 8*sizeof(int)*dataSize;
 	if(maxExpectedSize % 31 > 0){
 		maxExpectedSize /= 31;
 		maxExpectedSize++;
@@ -133,7 +133,7 @@ unsigned int* compress(
 	(*blockSizes) = (unsigned long long int*)malloc(sizeof(unsigned long long int) *blockCount);
 
 	// copy block sizes
-	if(cudaSuccess != cudaMemcpy((*blockSizes), blockCounts_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy((*blockSizes), blockCounts_gpu, blockCount * sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block counts" << std::endl;
 		FREE_ALL
 		return NULL;
@@ -143,15 +143,15 @@ unsigned int* compress(
 	unsigned long long int* orderArray = (unsigned long long int*) malloc(sizeof(unsigned long long int) * blockCount);
 	(*orderingArray) = orderArray;
 	// copy ordering array
-	if(cudaSuccess != cudaMemcpy(orderArray, orderArray_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(orderArray, orderArray_gpu, blockCount * sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy ordering array" << std::endl;
 		FREE_ALL
 		return NULL;
 	}
 
-	unsigned int outputSize = 0;;
+	unsigned long long int outputSize = 0;;
 
-	if(cudaSuccess != cudaMemcpy(&outputSize, sizeCounter_gpu, sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&outputSize, sizeCounter_gpu, sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block offset" << std::endl;
 		FREE_ALL
 		return NULL;

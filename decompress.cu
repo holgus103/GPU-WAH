@@ -29,7 +29,7 @@ unsigned int* decompress(
 		blockCount++;
 	}
 	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
-	cudaMalloc((void**)&counts_gpu, sizeof(int)*dataSize);
+	cudaMalloc((void**)&counts_gpu, sizeof(unsigned long long int)*blockCount);
 	cudaMemcpy(data_gpu, data, sizeof(int)*dataSize, cudaMemcpyHostToDevice);
 
 	STOP_TIMER
@@ -39,17 +39,17 @@ unsigned int* decompress(
 	dim3 blockDim(32, 32);
 	// get blocked sizes
 	getCounts<<<blockCount,blockDim>>>(data_gpu, counts_gpu, dataSize);
-	unsigned int lastBlockSize;
-	cudaMemcpy(&lastBlockSize, counts_gpu  + (dataSize - 1), sizeof(int), cudaMemcpyDeviceToHost);
+	unsigned long long int lastBlockSize;
+	cudaMemcpy(&lastBlockSize, counts_gpu  + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
 	// scan block sizes
 	thrust::device_ptr<unsigned long long int> countsPtr(counts_gpu);
 	// get counts
 	thrust::exclusive_scan(countsPtr, countsPtr + dataSize, countsPtr);
-	unsigned int lastOffset;
+	unsigned long long int lastOffset;
 //	thrust::inclusive_scan(counts_cpu, counts_cpu + dataSize, counts_cpu);
-	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(int), cudaMemcpyDeviceToHost);
-	int outputSize = lastBlockSize + lastOffset;
-	int realSize = 31*outputSize;
+	cudaMemcpy(&lastOffset, counts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+	unsigned long long int outputSize = lastBlockSize + lastOffset;
+	unsigned long long int realSize = 31*outputSize;
 
 	if(realSize % 32 > 0){
 		realSize /=32;
@@ -114,14 +114,14 @@ unsigned int* reorder(
 	unsigned int *data_gpu, *output_gpu;
 	unsigned long long int* blockSizes_gpu, *offsets_gpu, *outputOffsets_gpu;
 	// allocate gpu memory
-	cudaMalloc((void**)&blockSizes_gpu, sizeof(int)*blockCount);
-	cudaMalloc((void**)&offsets_gpu, sizeof(int)*blockCount);
+	cudaMalloc((void**)&blockSizes_gpu, sizeof(unsigned long long int)*blockCount);
+	cudaMalloc((void**)&offsets_gpu, sizeof(unsigned long long int)*blockCount);
 	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
 	cudaMalloc((void**)&output_gpu, sizeof(int)*dataSize);
-	cudaMalloc((void**)&outputOffsets_gpu, sizeof(int)*dataSize);
+	cudaMalloc((void**)&outputOffsets_gpu, sizeof(unsigned long long int)*blockCount);
 
-	cudaMemcpy(blockSizes_gpu, blockSizes, sizeof(int) * blockCount, cudaMemcpyHostToDevice);
-	cudaMemcpy(offsets_gpu, offsets, sizeof(int) * blockCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(blockSizes_gpu, blockSizes, sizeof(unsigned long long int) * blockCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(offsets_gpu, offsets, sizeof(unsigned long long int) * blockCount, cudaMemcpyHostToDevice);
 	cudaMemcpy(data_gpu, data, sizeof(int) * dataSize, cudaMemcpyHostToDevice);
 
 	STOP_TIMER
