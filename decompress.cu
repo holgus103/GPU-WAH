@@ -39,13 +39,13 @@ unsigned int* decompress(
 	dim3 blockDim(32, 32);
 	// get blocked sizes
 	getCounts<<<blockCount,blockDim>>>(data_gpu, counts_gpu, dataSize);
-	unsigned int lastBlockSize;
+	unsigned long long int lastBlockSize;
 	cudaMemcpy(&lastBlockSize, counts_gpu  + (dataSize - 1), sizeof(long long int), cudaMemcpyDeviceToHost);
 	// scan block sizes
 	thrust::device_ptr<unsigned long long int> countsPtr(counts_gpu);
 	// get counts
 	thrust::exclusive_scan(countsPtr, countsPtr + dataSize, countsPtr);
-	unsigned int lastOffset;
+	unsigned long long int lastOffset;
 //	thrust::inclusive_scan(counts_cpu, counts_cpu + dataSize, counts_cpu);
 	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(long long int), cudaMemcpyDeviceToHost);
 	unsigned long long int outputSize = lastBlockSize + lastOffset;

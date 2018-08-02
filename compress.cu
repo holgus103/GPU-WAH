@@ -110,9 +110,9 @@ unsigned int* compress(
 	thrust::device_ptr<unsigned long long int> blockCountsPtr(blockCounts_gpu);
 
 
-	unsigned int lastWordNumber;
+	unsigned long long int lastWordNumber;
 
-	if(cudaSuccess != cudaMemcpy(&lastWordNumber, blockCounts_gpu + (blockCount - 1), sizeof(int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&lastWordNumber, blockCounts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block count" << std::endl;
 		cudaFree(compressed_gpu);
 		cudaFree(blockCounts_gpu);
@@ -120,9 +120,9 @@ unsigned int* compress(
 	}
 
 	thrust::exclusive_scan(blockCountsPtr, blockCountsPtr + blockCount, blockCountsPtr);
-	unsigned int lastBlockOffset;
+	unsigned long long int  lastBlockOffset;
 
-	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(long long int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block offset" << std::endl;
 		cudaFree(compressed_gpu);
 		cudaFree(blockCounts_gpu);

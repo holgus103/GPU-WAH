@@ -265,7 +265,7 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
 
 __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize){
 	// get global id
-	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
+	unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// out of range
 	if(globalId >= dataSize) return;
 	unsigned int word = data_gpu[globalId];
