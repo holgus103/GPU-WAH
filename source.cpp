@@ -7,28 +7,28 @@
 #include <fstream>
 #include <iostream>
 
-int main()
-{
-//	warpCompressionTest();
-//	blockCompressionTest();
-//	blockMergeTest();
-//	blockMergeWithOnesStartsTest();
-//	blockMergeAlternatingTest();
-//	blockMergeFinalLiterals();
-//	blockMergeWanderingLiterals();
-//	multiBlockTest();
-//	compressAndDecompressTest();
-//	zerosTest();
-	randomDataTest();
-	return 0;
-}
+ int main()
+ {
+ //	warpCompressionTest();
+ //	blockCompressionTest();
+ //	blockMergeTest();
+ //	blockMergeWithOnesStartsTest();
+ //	blockMergeAlternatingTest();
+ //	blockMergeFinalLiterals();
+ //	blockMergeWanderingLiterals();
+ //	multiBlockTest();
+ //	compressAndDecompressTest();
+ //	zerosTest();
+ 	randomDataTest();
+ 	return 0;
+ }
 
 
 //
 //int main(){
-//  std::fstream fs;
-//  fs.open ("results.txt", std::fstream::out | std::fstream::app);
-//  // write headers
+// std::fstream fs;
+// fs.open ("results.txt", std::fstream::out | std::fstream::app);
+// // write headers
 //	fs << "Original size [Int] , ";
 //	fs << "Compressed size [Int] , ";
 //	fs << "Decompressed size [Int] , ";
@@ -43,12 +43,12 @@ int main()
 //	fs << "Decompression transfer to device [ms], ";
 //	fs << "Decompression time [ms],";
 //	fs << "Decompression transfer from device [ms]" << std::endl;
-//	for (int s=1;s<=64;s<<=1) {
+//	for (int s=1;s<=256;s<<=1) {
 //		for (int i=1;i<=16;i++) {
 //			float c_globalTransferToDevice = 0, c_globalTransferFromDevice = 0, c_globalCompression = 0;
 //			float d_globalTransferToDevice = 0, d_globalTransferFromDevice = 0 , d_globalDecompression = 0;
 //			float r_globalTransferToDevice = 0, r_globalTransferFromDevice = 0 , r_globalReordering= 0;
-//			int dataSize = s*1024*31*32;
+//			unsigned long long int dataSize = s*1024*31*32;
 //			unsigned int* dataset = (unsigned int*)malloc((dataSize+1) * sizeof(int));
 //			generateRandomData(dataset, dataSize, 1<<i);
 //			int globalCompressedSize, globalDecompressedSize;
@@ -57,10 +57,10 @@ int main()
 //				float c_transferToDevice, c_transferFromDevice, c_compression;
 //				float d_transferToDevice, d_transferFromDevice, d_decompression;
 //				float r_transferToDevice, r_transferFromDevice, r_reordering;
-//				unsigned int compressedSize, decompressedSize;
-//				unsigned int* orderingArray;
-//				unsigned int* blockSizes;
-//				unsigned int blockCount;
+//				unsigned long long int compressedSize, decompressedSize;
+//				unsigned long long int* orderingArray;
+//				unsigned long long int* blockSizes;
+//				unsigned long long int blockCount;
 //				unsigned int* res = compress(dataset, dataSize, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 //				unsigned int* compressed = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);
 //				unsigned int* decompressed = decompress(compressed, compressedSize, &decompressedSize, &d_transferToDevice, &d_decompression, &d_transferFromDevice);

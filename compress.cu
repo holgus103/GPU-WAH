@@ -37,11 +37,11 @@ struct is_zero
 // datasize is in integers!
 unsigned int* compress(
 		unsigned int* data_cpu,
-		unsigned int dataSize,
-		unsigned int* outSize,
-		unsigned int** orderingArray,
-		unsigned int* orderingLength,
-		unsigned int** blockSizes,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
+		unsigned long long int** orderingArray,
+		unsigned long long int* orderingLength,
+		unsigned long long int** blockSizes,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -56,7 +56,7 @@ unsigned int* compress(
 	cudaEventCreate(&start);
 	cudaEventRecord(start,0);
 
-	int blockCount = dataSize / (31*32);
+	unsigned long long blockCount = dataSize / (31*32);
 
 	if(dataSize % (31*32)> 0){
 		blockCount++;
@@ -64,7 +64,8 @@ unsigned int* compress(
 	// assign blockCount
 	(*orderingLength) = blockCount;
 
-	unsigned int *data_gpu, *compressed_gpu, *blockCounts_gpu, *orderArray_gpu, *sizeCounter_gpu;
+	unsigned int *data_gpu, *compressed_gpu;
+	unsigned long long int *blockCounts_gpu, *sizeCounter_gpu, *orderArray_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
 	long long maxExpectedSize = 8*sizeof(int)*dataSize;
@@ -79,12 +80,12 @@ unsigned int* compress(
 	dim3 blockSize = dim3(32, 32, 1);
 
 	// allocate memory on the device
-	if(cudaSuccess != cudaMalloc((void**)&sizeCounter_gpu, sizeof(int))){
+	if(cudaSuccess != cudaMalloc((void**)&sizeCounter_gpu, sizeof(unsigned long long int))){
 		std::cout << "Could not allocate space for size counter" << std::endl;
 		FREE_ALL
 		return NULL;
 	}
-	if(cudaSuccess != cudaMalloc((void**)&orderArray_gpu, blockCount * sizeof(int))){
+	if(cudaSuccess != cudaMalloc((void**)&orderArray_gpu, blockCount * sizeof(unsigned long long int))){
 		std::cout << "Could not allocate space for order array" << std::endl;
 		FREE_ALL
 		return NULL;
@@ -99,7 +100,7 @@ unsigned int* compress(
 		FREE_ALL
 		return NULL;
 	}
-	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(int))){
+	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(unsigned long long int))){
 		std::cout << "Could not allocate space for the block sizes" << std::endl;
 		FREE_ALL
 		return NULL;
@@ -129,7 +130,7 @@ unsigned int* compress(
 	cudaFree((void*)data_gpu);
 
 	// allocate memory for block sizes
-	(*blockSizes) = (unsigned int*)malloc(sizeof(int) *blockCount);
+	(*blockSizes) = (unsigned long long int*)malloc(sizeof(unsigned long long int) *blockCount);
 
 	// copy block sizes
 	if(cudaSuccess != cudaMemcpy((*blockSizes), blockCounts_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){
@@ -139,7 +140,7 @@ unsigned int* compress(
 	}
 
 	// allocate ordering array
-	unsigned int* orderArray = (unsigned int*)malloc(sizeof(int) * blockCount);
+	unsigned long long int* orderArray = (unsigned long long int*) malloc(sizeof(unsigned long long int) * blockCount);
 	(*orderingArray) = orderArray;
 	// copy ordering array
 	if(cudaSuccess != cudaMemcpy(orderArray, orderArray_gpu, blockCount * sizeof(int), cudaMemcpyDeviceToHost)){

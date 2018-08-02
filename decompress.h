@@ -10,18 +10,18 @@
 
 unsigned int* decompress(
 		unsigned int* data,
-		unsigned int dataSize,
-		unsigned int* outSize,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);
 
 unsigned int* reorder(
-		unsigned int* blockSizes,
-		unsigned int* offsets,
-		int blockCount,
+		unsigned long long int* blockSizes,
+		unsigned long long int* offsets,
+		unsigned long long int blockCount,
 		unsigned int* data,
-		int dataSize,
+		unsigned long long int dataSize,
 		float* pTransferToDeviceTime,
 		float* pReoderingTime,
 		float* ptranserFromDeviceTime

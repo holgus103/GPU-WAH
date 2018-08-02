@@ -41,6 +41,7 @@ void generateWanderingTestData(unsigned int* arr, int baseIndex){
 
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN) {
 	int res;
+	srand(1337);
 	int treshold=RAND_MAX/everyN;
 	for (long long int i=0;i<size*32;i++) {
 		long long int word=i>>5; // /32
@@ -305,7 +306,7 @@ TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
 	int blocks = 256 * 1024;
-	unsigned int* orderingArray;
+	unsigned long long int* orderingArray;
 	unsigned int* blockSizes;
 	unsigned int blockCount;
 	int size = 31*32*blocks; //16MB of ints

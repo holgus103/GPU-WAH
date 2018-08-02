@@ -6,8 +6,8 @@
 
 unsigned int* decompress(
 		unsigned int* data,
-		unsigned int dataSize,
-		unsigned int* outSize,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -21,8 +21,9 @@ unsigned int* decompress(
 	CREATE_TIMER
 	START_TIMER
 
-	unsigned int *data_gpu, *counts_gpu, *result_gpu, *finalOutput_gpu, *output_cpu;
-	int blockCount = dataSize / 1024;
+	unsigned int *data_gpu, *result_gpu, *finalOutput_gpu, *output_cpu;
+	unsigned long long int* counts_gpu;
+	unsigned long long int blockCount = dataSize / 1024;
 
 	if(dataSize % 1024 > 0){
 		blockCount++;
@@ -41,7 +42,7 @@ unsigned int* decompress(
 	unsigned int lastBlockSize;
 	cudaMemcpy(&lastBlockSize, counts_gpu  + (dataSize - 1), sizeof(int), cudaMemcpyDeviceToHost);
 	// scan block sizes
-	thrust::device_ptr<unsigned int> countsPtr(counts_gpu);
+	thrust::device_ptr<unsigned long long int> countsPtr(counts_gpu);
 	// get counts
 	thrust::exclusive_scan(countsPtr, countsPtr + dataSize, countsPtr);
 	unsigned int lastOffset;
@@ -92,11 +93,11 @@ unsigned int* decompress(
 }
 
 unsigned int* reorder(
-		unsigned int* blockSizes,
-		unsigned int* offsets,
-		int blockCount,
+		unsigned long long int* blockSizes,
+		unsigned long long int* offsets,
+		unsigned long long int blockCount,
 		unsigned int* data,
-		int dataSize,
+		unsigned long long int dataSize,
 		float* pTransferToDeviceTime,
 		float* pReoderingTime,
 		float* ptranserFromDeviceTime
@@ -110,7 +111,8 @@ unsigned int* reorder(
 	CREATE_TIMER
 	START_TIMER
 
-	unsigned int* blockSizes_gpu, * offsets_gpu, *data_gpu, *outputOffsets_gpu, *output_gpu;
+	unsigned int *data_gpu, *output_gpu;
+	unsigned long long int* blockSizes_gpu, *offsets_gpu, *outputOffsets_gpu;
 	// allocate gpu memory
 	cudaMalloc((void**)&blockSizes_gpu, sizeof(int)*blockCount);
 	cudaMalloc((void**)&offsets_gpu, sizeof(int)*blockCount);
@@ -127,8 +129,8 @@ unsigned int* reorder(
 
 	START_TIMER
 
-	thrust::device_ptr<unsigned int> pBlockSizes(blockSizes_gpu);
-	thrust::device_ptr<unsigned int> pOutputOffets(outputOffsets_gpu);
+	thrust::device_ptr<unsigned long long int> pBlockSizes(blockSizes_gpu);
+	thrust::device_ptr<unsigned long long int> pOutputOffets(outputOffsets_gpu);
 
 	thrust::exclusive_scan(pBlockSizes, pBlockSizes + blockCount, pOutputOffets);
 

@@ -11,11 +11,11 @@
 
 unsigned int* compress(
 		unsigned int* data_cpu,
-		unsigned int dataSize,
-		unsigned int* outputSize,
-		unsigned int** orderingArray,
-		unsigned int* orderingLength,
-		unsigned int** blockSizes,
+		unsigned long long int dataSize,
+		unsigned long long int* outputSize,
+		unsigned long long int** orderingArray,
+		unsigned long long int* orderingLength,
+		unsigned long long int** blockSizes,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);
