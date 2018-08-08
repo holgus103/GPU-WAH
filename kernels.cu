@@ -240,6 +240,7 @@ __global__ void compressData(
 	}
 	__syncthreads();
 	if(!idle){
+		// assign offset
 		orderingArray[blockIdx.x] = outputOffset;
 		output[index + outputOffset] = word;
 	}
@@ -267,13 +268,30 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
 
 }
 
-__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize){
+__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int* offsets, unsigned int blocks, unsigned long long int dataSize){
 	// get global id
 	unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// out of range
 	if(globalId >= dataSize) return;
 	unsigned int word = data_gpu[globalId];
 	unsigned long long int offset = counts_gpu[globalId];
+
+	int blockIndex = 0;
+	unsigned long long int blockOffset = 0;
+
+	// find current block
+	for(int i=0;i<blocks; i++){
+		// find max value smaller than globalId
+		if(offsets[i] <= globalId && offsets[i] >= blockOffset){
+			blockIndex = i;
+			blockOffset = offsets[i];
+		}
+		else{
+			break;
+		}
+	}
+	offset -= counts_gpu[blockOffset];
+	offset += 31*32*blockIndex;
 //	printf("id : %d offset: %d \n", globalId, offset);
 	if((BIT31 & word) > 0){
 
@@ -342,6 +360,9 @@ __global__ void reoderKernel(
 		if(offsets[i] <= globalId && offsets[i] >= blockOffset){
 			blockIndex = i;
 			blockOffset = offsets[i];
+		}
+		else{
+			break;
 		}
 	}
 

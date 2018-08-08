@@ -8,6 +8,8 @@ unsigned int* decompress(
 		unsigned int* data,
 		unsigned long long int dataSize,
 		unsigned long long int* outSize,
+		unsigned long long int* offsets,
+		unsigned int blocks,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -22,15 +24,17 @@ unsigned int* decompress(
 	START_TIMER
 
 	unsigned int *data_gpu, *result_gpu, *finalOutput_gpu, *output_cpu;
-	unsigned long long int* counts_gpu;
+	unsigned long long int* counts_gpu, *offsets_gpu;
 	unsigned long long int blockCount = dataSize / 1024;
 
 	if(dataSize % 1024 > 0){
 		blockCount++;
 	}
 	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
+	cudaMalloc((void**)&offsets_gpu, sizeof(unsigned long long int)* blocks);
 	cudaMalloc((void**)&counts_gpu, sizeof(unsigned long long int)*dataSize);
 	cudaMemcpy(data_gpu, data, sizeof(int)*dataSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(offsets_gpu, offsets, sizeof(unsigned long long int)*blocks, cudaMemcpyHostToDevice);
 
 	STOP_TIMER
 	GET_RESULT(transferToDeviceTime)
@@ -62,7 +66,7 @@ unsigned int* decompress(
 //	free(counts_cpu);
 	cudaMalloc((void**)&result_gpu, sizeof(int) * outputSize);
 
-	decompressWords<<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, dataSize);
+	decompressWords<<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, offsets_gpu, blocks, dataSize);
 	cudaFree(data_gpu);
 	cudaFree(counts_gpu);
 
@@ -140,7 +144,7 @@ unsigned int* reorder(
 		b++;
 	}
 
-	reoderKernel<<<b, dim3(32, 32)>>>(blockSizes_gpu, offsets_gpu, outputOffsets_gpu, blockCount, data_gpu, dataSize, output_gpu);
+//	reoderKernel<<<b, dim3(32, 32)>>>(blockSizes_gpu, offsets_gpu, outputOffsets_gpu, blockCount, data_gpu, dataSize, output_gpu);
 
 	STOP_TIMER
 	GET_RESULT(reorderingTime)
