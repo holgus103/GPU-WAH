@@ -286,12 +286,10 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* 
 			blockIndex = i;
 			blockOffset = offsets[i];
 		}
-		else{
-			break;
-		}
 	}
+
+	offset += 32*32*blockIndex;
 	offset -= counts_gpu[blockOffset];
-	offset += 31*32*blockIndex;
 //	printf("id : %d offset: %d \n", globalId, offset);
 	if((BIT31 & word) > 0){
 

@@ -17,7 +17,7 @@
  //	blockMergeFinalLiterals();
  //	blockMergeWanderingLiterals();
  //	multiBlockTest();
- //	compressAndDecompressTest();
+// 	compressAndDecompressTest();
  //	zerosTest();
  	randomDataTest();
  	return 0;

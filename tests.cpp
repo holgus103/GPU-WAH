@@ -249,38 +249,39 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 //
 //TEST_END
 //
-//TEST_DEC(compressAndDecompressTest)
-//	unsigned int* orderingArray;
-//	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-//	int blocks = 1024*64;
-//	int size = 31*32*blocks;
-//	unsigned int* data = (unsigned int*)malloc(sizeof(int)*size);
-//	for(int j = 0; j < blocks; j++){
-//		generateWanderingTestData(data, j*31*32);
-//	}
-//	unsigned int compressedSize, decompressedSize;
-//
-//	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-//	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-//	if(decompressedSize != size){
-//		printf("decompressed size does not match");
-//		return false;
-//	}
-//	ASSERT(decomp, data, decompressedSize)
-//	free(decomp);
-//	free(data);
-//	free(orderingArray);
-//
-//	printf("Compression \n");
-//	printf("Transfer to device: %f \n", c_transferToDevice);
-//	printf("Compression: %f \n", c_compression);
-//	printf("Transfer from device: %f \n", c_transferFromDevice);
-//
-//	printf("Decompression \n");
-//	printf("Transfer to device: %f \n", d_transferToDevice);
-//	printf("Compression: %f \n", d_compression);
-//	printf("Transfer from device: %f \n", d_transferFromDevice);
-//TEST_END
+TEST_DEC(compressAndDecompressTest)
+	unsigned long long int* orderingArray;
+	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
+	int blocks = 2;
+	int size = 31*32*blocks;
+	unsigned int* data = (unsigned int*)malloc(sizeof(int)*size);
+	for(int j = 0; j < blocks; j++){
+		generateWanderingTestData(data, j*31*32);
+	}
+
+	unsigned long long int compressedSize, decompressedSize;
+	unsigned long long int* blockSizes, blockCount;
+	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, orderingArray, blocks, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	if(decompressedSize != size){
+		printf("decompressed size does not match");
+		return false;
+	}
+	ASSERT(decomp, data, decompressedSize)
+	free(decomp);
+	free(data);
+	free(orderingArray);
+
+	printf("Compression \n");
+	printf("Transfer to device: %f \n", c_transferToDevice);
+	printf("Compression: %f \n", c_compression);
+	printf("Transfer from device: %f \n", c_transferFromDevice);
+
+	printf("Decompression \n");
+	printf("Transfer to device: %f \n", d_transferToDevice);
+	printf("Compression: %f \n", d_compression);
+	printf("Transfer from device: %f \n", d_transferFromDevice);
+TEST_END
 //
 //
 //TEST_DEC(zerosTest)
@@ -305,7 +306,7 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
-	int blocks = 2;
+	int blocks = 1024;
 	unsigned long long int* orderingArray;
 	unsigned long long int* blockSizes;
 	unsigned long long int blockCount;
