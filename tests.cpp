@@ -306,13 +306,13 @@ TEST_END
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
-	int blocks = 1024;
+	int blocks = 1024*32;
 	unsigned long long int* orderingArray;
 	unsigned long long int* blockSizes;
 	unsigned long long int blockCount;
 	int size = 31*32*blocks; //16MB of ints
 	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-	generateRandomData(data, size, (1 << 5));
+	generateRandomData(data, size, (1 << 1));
 	unsigned long long int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 //	unsigned int* reordered = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);

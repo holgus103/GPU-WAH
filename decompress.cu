@@ -69,6 +69,7 @@ unsigned int* decompress(
 	decompressWords<<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, offsets_gpu, blocks, dataSize);
 	cudaFree(data_gpu);
 	cudaFree(counts_gpu);
+	cudaFree(offsets_gpu);
 
 	blockCount = outputSize / 1024;
 	if(dataSize % 1024 > 0){

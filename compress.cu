@@ -172,14 +172,18 @@ unsigned int* compress(
 	// allocate memory for results
 	unsigned int* compressed_cpu = (unsigned int*)malloc(sizeof(int)* outputSize);
 	// copy compressed data
-	if(cudaSuccess != cudaMemcpy((void*)compressed_cpu, (void*)compressed_gpu, outputSize * sizeof(int), cudaMemcpyDeviceToHost)){
+	cudaError_t err;
+	err = cudaMemcpy((void*)compressed_cpu, (void*)compressed_gpu, outputSize * sizeof(int), cudaMemcpyDeviceToHost);
+	if(cudaSuccess != err){
 		std::cout << "Could not copy final output" << std::endl;
+		std::cout << err << std::endl;
 	}
 
 	// free gpu memory
 	cudaFree((void*)compressed_gpu);
 	cudaFree((void*)blockCounts_gpu);
 	cudaFree((void*)orderArray_gpu);
+	cudaFree((void*)sizeCounter_gpu);
 
 	// get transfer time
 	cudaEventCreate(&stop);
