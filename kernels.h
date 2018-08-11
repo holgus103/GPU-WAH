@@ -35,6 +35,7 @@ __global__ void decompressWords(
 		unsigned long long int* counts_gpu,
 		unsigned int* result_gpu,
 		unsigned long long int* offsets,
+		unsigned long long int* blockSizes,
 		unsigned int blocks,
 		unsigned long long int dataSize
 		);

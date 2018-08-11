@@ -13,6 +13,7 @@ unsigned int* decompress(
 		unsigned long long int dataSize,
 		unsigned long long int* outSize,
 		unsigned long long int* offsets,
+		unsigned long long int* blockSizes,
 		unsigned int blocks,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,

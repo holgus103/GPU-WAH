@@ -63,7 +63,7 @@ int main(){
 				unsigned long long int blockCount;
 				unsigned int* res = compress(dataset, dataSize, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 //				unsigned int* compressed = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);
-				unsigned int* decompressed = decompress(res, compressedSize, &decompressedSize, orderingArray, blockCount, &d_transferToDevice, &d_decompression, &d_transferFromDevice);
+				unsigned int* decompressed = decompress(res, compressedSize, &decompressedSize, orderingArray, blockSizes, blockCount, &d_transferToDevice, &d_decompression, &d_transferFromDevice);
 //				ASSERT(decompressed, dataset, dataSize);
 				free(res);
 //				free(compressed);

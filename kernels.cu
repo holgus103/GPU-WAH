@@ -268,29 +268,34 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
 
 }
 
-__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int* offsets, unsigned int blocks, unsigned long long int dataSize){
+__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int* offsets, unsigned long long int* blockSizes, unsigned int blocks, unsigned long long int dataSize){
+
+	__shared__ unsigned long long int blockStart;
+	__shared__ unsigned long long int blockEnd;
+
 	// get global id
-	unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
-	// out of range
-	if(globalId >= dataSize) return;
-	unsigned int word = data_gpu[globalId];
-	unsigned long long int offset = counts_gpu[globalId];
+	unsigned int blockId = blockIdx.x;
+	int localId = blockDim.x * threadIdx.y + threadIdx.x;
 
-	int blockIndex = 0;
-	unsigned long long int blockOffset = 0;
-
-	// find current block
-	for(int i=0;i<blocks; i++){
-		// find max value smaller than globalId
-		if(offsets[i] <= globalId && offsets[i] >= blockOffset){
-			blockIndex = i;
-			blockOffset = offsets[i];
-		}
+	if(localId == 0){
+		blockStart = offsets[blockId];
+		blockEnd = blockStart + blockSizes[blockId];
+//			printf("block : %d ", blockId);
 	}
+		__syncthreads();
 
-	offset += 32*32*blockIndex;
-	offset -= counts_gpu[blockOffset];
-//	printf("id : %d offset: %d \n", globalId, offset);
+	unsigned long long int globalId = blockStart + localId;
+
+
+	if(globalId < blockStart || globalId >= blockEnd) return;
+
+	unsigned int word = data_gpu[globalId];
+	unsigned long long int offset = counts_gpu[globalId] - counts_gpu[blockStart] + 32*32*blockId;
+	// out of range
+
+//	if(offset == 383){
+//		printf("writting to 383");
+//	}
 	if((BIT31 & word) > 0){
 
 		int count = word & (BIT30 - 1);

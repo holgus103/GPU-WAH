@@ -252,7 +252,7 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 TEST_DEC(compressAndDecompressTest)
 	unsigned long long int* orderingArray;
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 2;
+	int blocks = 300;
 	int size = 31*32*blocks;
 	unsigned int* data = (unsigned int*)malloc(sizeof(int)*size);
 	for(int j = 0; j < blocks; j++){
@@ -262,7 +262,7 @@ TEST_DEC(compressAndDecompressTest)
 	unsigned long long int compressedSize, decompressedSize;
 	unsigned long long int* blockSizes, blockCount;
 	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, orderingArray, blocks, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, orderingArray, blockSizes, blocks, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	if(decompressedSize != size){
 		printf("decompressed size does not match");
 		return false;
@@ -306,7 +306,7 @@ TEST_END
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
-	int blocks = 1024*32;
+	int blocks = 32 * 1024;
 	unsigned long long int* orderingArray;
 	unsigned long long int* blockSizes;
 	unsigned long long int blockCount;
@@ -316,7 +316,7 @@ TEST_DEC(randomDataTest)
 	unsigned long long int compressedSize, decompressedSize;
 	unsigned int* res = compress(data, size, &compressedSize, &orderingArray, &blockCount, &blockSizes, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 //	unsigned int* reordered = reorder(blockSizes, orderingArray, blockCount, res, compressedSize, &r_transferToDevice, &r_reordering, &r_transferFromDevice);
-	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, orderingArray, blockCount, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, orderingArray, blockSizes, blockCount, &d_transferToDevice, &d_compression, &d_transferFromDevice);
 	ASSERT(decomp, data, size)
 	std::cout << size << std::endl;
 	std::cout << compressedSize << std::endl;
