@@ -6,18 +6,18 @@
 #include "tests.h"
 #include <fstream>
 #include <iostream>
-//
+
  int main()
  {
  //	warpCompressionTest();
  //	blockCompressionTest();
-// 	blockMergeTest();
+ 	blockMergeTest();
  //	blockMergeWithOnesStartsTest();
  //	blockMergeAlternatingTest();
  //	blockMergeFinalLiterals();
- //	blockMergeWanderingLiterals();
+ 	blockMergeWanderingLiterals();
  //	multiBlockTest();
-// 	compressAndDecompressTest();
+ 	compressAndDecompressTest();
  //	zerosTest();
  	randomDataTest();
  	return 0;

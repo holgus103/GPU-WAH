@@ -65,14 +65,11 @@ void generateRandomData(unsigned int* tab, unsigned int size, unsigned int every
 
 void generateWanderingExpectedData(unsigned int* expected, int baseIndex){
 	expected[baseIndex] = 1;
-	expected[baseIndex + 1] = BIT31 | 31;
-	for(int i=0; i < 30; i++){
-		expected[baseIndex + 2+3*i] = BIT31 | i + 1;
-		expected[baseIndex + 2+3*i + 1] = 1;
-		expected[baseIndex + 2+3*i + 2] = BIT31 | 30 - i;
+	for(int i=0; i<31; i++){
+		expected[baseIndex + 1 + 2*i] = BIT31 | 32;
+		expected[baseIndex + 2 + 2*i] = 1;
 	}
-	expected[baseIndex + 91] = BIT31 | 32;
-	expected[baseIndex + 92] = 1;
+
 
 }
 
@@ -222,19 +219,21 @@ TEST_END
 //	free(orderingArray);
 //TEST_END
 //
-//TEST_DEC(blockMergeWanderingLiterals)
-//	unsigned int data[31*32] = {0};
-//	unsigned int* orderingArray;
-//	generateWanderingTestData(data,0);
-//	unsigned int compressedSize;
-//	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
-//	unsigned int expected[93];
-//
-//	generateWanderingExpectedData(expected, 0);
-//	free(orderingArray);
-//	ASSERT(res, expected, 93)
-//
-//TEST_END
+TEST_DEC(blockMergeWanderingLiterals)
+	unsigned int data[31*32] = {0};
+	unsigned long long int* orderingArray;
+	unsigned long long int orderingLength;
+	unsigned long long int* blockSizes;
+	generateWanderingTestData(data,0);
+	unsigned long long int compressedSize;
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, &orderingLength, &blockSizes, NULL, NULL, NULL);
+	unsigned int expected[63];
+
+	generateWanderingExpectedData(expected, 0);
+	free(orderingArray);
+	ASSERT(res, expected, 63)
+
+TEST_END
 //
 //TEST_DEC(multiBlockTest)
 //	unsigned int* orderingArray;
@@ -308,7 +307,7 @@ TEST_END
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
-	int blocks = 2048;
+	int blocks = 1024;
 	unsigned long long int* orderingArray;
 	unsigned long long int* blockSizes;
 	unsigned long long int blockCount;

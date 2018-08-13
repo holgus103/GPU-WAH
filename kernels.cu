@@ -177,8 +177,8 @@ __global__ void compressData(
 		int count = counts[id];
 		// used to not check the same condition twice
 		bool satisfiedMergingConditions = false;
-		// only execute if it's a non
-		if((id == warpSize - 1) || (endings[id] != beginnings[id+1]) || endings[id] == WORD_LITERAL){
+		// only execute if it's not going to get merged with something else
+		if((id == warpSize - 1) || (endings[id] != beginnings[id+1]) || endings[id] == WORD_LITERAL || counts[id] > 1){
 			int i = 1;
 			satisfiedMergingConditions = true;
 			int bonus = 0;
