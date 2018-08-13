@@ -268,8 +268,9 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
 
 }
 
-__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int* offsets, unsigned long long int* blockSizes, unsigned int blocks, unsigned long long int dataSize){
+__global__ void decompressWords(unsigned int* data_gpu, unsigned int* result_gpu, unsigned long long int* offsets, unsigned long long int* blockSizes, unsigned int blocks, unsigned long long int dataSize){
 
+	__shared__ int blockCounts[32];
 	__shared__ unsigned long long int blockStart;
 	__shared__ unsigned long long int blockEnd;
 
@@ -282,23 +283,37 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* 
 		blockEnd = blockStart + blockSizes[blockId];
 //			printf("block : %d ", blockId);
 	}
-		__syncthreads();
+	__syncthreads();
 
 	unsigned long long int globalId = blockStart + localId;
-
 
 	if(globalId < blockStart || globalId >= blockEnd) return;
 
 	unsigned int word = data_gpu[globalId];
-	unsigned long long int offset = counts_gpu[globalId] - counts_gpu[blockStart] + 32*32*blockId;
+	unsigned long long int offset = 32*32*blockId;
 	// out of range
+	int count = (BIT31 & word) > 0 ? word & (BIT30 - 1) : 1;
+	// is not the last working warp in the block
+	int warpOffset = localScan(count, threadIdx.x) - count;
+	if(blockStart + threadIdx.y * 32 + 32 < blockEnd){
+		if(threadIdx.x == warpSize - 1){
+			blockCounts[threadIdx.y] = warpOffset + count;
+		}
 
-//	if(offset == 383){
-//		printf("writting to 383");
-//	}
+	}
+	__syncthreads();
+	if(blockStart + threadIdx.y * 32 + 32 < blockEnd){
+		if(threadIdx.y == 0){
+			int val = blockCounts[threadIdx.x];
+			int o = localScan(val, threadIdx.x);
+			blockCounts[threadIdx.x] = o - val;
+		}
+	}
+
+	__syncthreads();
+	offset += blockCounts[threadIdx.y] + warpOffset;
 	if((BIT31 & word) > 0){
 
-		int count = word & (BIT30 - 1);
 		unsigned int filler;
 		// assign correct filler word
 		if((BIT3130 & word) == BIT3130){

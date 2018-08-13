@@ -168,15 +168,17 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 //	ASSERT_MODULO(res, help, 6*32, 6);
 //TEST_END
 //
-//TEST_DEC(blockMergeTest)
-//	unsigned int* orderingArray;
-//	unsigned int data[32*31] = {0};
-//	unsigned int compressedSize;
-//	unsigned int expected[1] = {BIT31 | 1024};
-//	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, NULL, NULL, NULL);
-//	ASSERT(res, expected, 1);
-//	free(orderingArray);
-//TEST_END
+TEST_DEC(blockMergeTest)
+	unsigned long long int* orderingArray;
+	unsigned long long int orderingLength;
+	unsigned long long int* blockSizes;
+	unsigned int data[32*31] = {0};
+	unsigned long long int compressedSize;
+	unsigned int expected[1] = {BIT31 | 1024};
+	unsigned int* res = compress(data, 31*32, &compressedSize, &orderingArray, &orderingLength, &blockSizes, NULL, NULL, NULL);
+	ASSERT(res, expected, 1);
+	free(orderingArray);
+TEST_END
 //
 //TEST_DEC(blockMergeWithOnesStartsTest)
 //	unsigned int data[32*31] = {0};
@@ -252,7 +254,7 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 TEST_DEC(compressAndDecompressTest)
 	unsigned long long int* orderingArray;
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 300;
+	int blocks = 1024;
 	int size = 31*32*blocks;
 	unsigned int* data = (unsigned int*)malloc(sizeof(int)*size);
 	for(int j = 0; j < blocks; j++){
@@ -306,7 +308,7 @@ TEST_END
 TEST_DEC(randomDataTest)
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	float r_transferToDevice, r_transferFromDevice, r_reordering;
-	int blocks = 32 * 1024;
+	int blocks = 2048;
 	unsigned long long int* orderingArray;
 	unsigned long long int* blockSizes;
 	unsigned long long int blockCount;

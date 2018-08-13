@@ -32,7 +32,6 @@ __global__ void getCounts(
 
 __global__ void decompressWords(
 		unsigned int* data_gpu,
-		unsigned long long int* counts_gpu,
 		unsigned int* result_gpu,
 		unsigned long long int* offsets,
 		unsigned long long int* blockSizes,
