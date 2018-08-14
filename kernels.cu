@@ -284,7 +284,9 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned int* result_gpu
 //			printf("block : %d ", blockId);
 	}
 	__syncthreads();
-
+	if(threadIdx.y == 0){
+		blockCounts[threadIdx.x] = 0;
+	}
 	unsigned long long int globalId = blockStart + localId;
 
 	if(globalId < blockStart || globalId >= blockEnd) return;
@@ -292,12 +294,18 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned int* result_gpu
 	unsigned int word = data_gpu[globalId];
 	unsigned long long int offset = 32*32*blockId;
 	// out of range
-	int count = (BIT31 & word) > 0 ? word & (BIT30 - 1) : 1;
+	int count = (BIT31 & word) > 0 ? (word & (BIT30 - 1)) : 1;
 	// is not the last working warp in the block
 	int warpOffset = localScan(count, threadIdx.x) - count;
+	if(warpOffset >= 1024){
+		printf("warp offset overboard %d", warpOffset);
+	}
 	if(blockStart + threadIdx.y * 32 + 32 < blockEnd){
 		if(threadIdx.x == warpSize - 1){
 			blockCounts[threadIdx.y] = warpOffset + count;
+			if((warpOffset + count) >= 1024){
+				printf("danger: %d", warpOffset + count);
+			}
 		}
 
 	}
@@ -305,8 +313,14 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned int* result_gpu
 	if(blockStart + threadIdx.y * 32 + 32 < blockEnd){
 		if(threadIdx.y == 0){
 			int val = blockCounts[threadIdx.x];
+			if(val >= 1024){
+				printf("warp offset: %d", val);
+			}
 			int o = localScan(val, threadIdx.x);
 			blockCounts[threadIdx.x] = o - val;
+			if(o-val > 1024*1024){
+				printf("val: %d, o: %d, warpOffset: %d, count: %d \n", val, o, warpOffset, count);
+			}
 		}
 	}
 

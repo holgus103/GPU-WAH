@@ -49,7 +49,7 @@ void generateRandomData(unsigned int* tab, unsigned int size, unsigned int every
 		if (off==0) {
 			//tab[word]=0;
 			res=0;
-			if (word%1000==0) printf("%f%%   \r",i*100.0/(double)(size*32-1));
+			//if (word%1000==0) printf("%f%%   \r",i*100.0/(double)(size*32-1));
 			//if (word>0) printf("%x \n",tab[word-1]);
 		}
 		//double v=(double)rand()/(double)RAND_MAX;

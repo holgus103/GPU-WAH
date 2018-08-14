@@ -31,9 +31,15 @@ unsigned int* decompress(
 	if(dataSize % 1024 > 0){
 		blockCount++;
 	}
-	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
-	cudaMalloc((void**)&offsets_gpu, sizeof(unsigned long long int)* blocks);
-	cudaMalloc((void**)&blockSizes_gpu, sizeof(unsigned long long int)* blocks);
+	if(cudaSuccess != cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize)){
+		std::cout << "Decomp: Could not allocate space for data array" << std::endl;
+	}
+	if(cudaSuccess != cudaMalloc((void**)&offsets_gpu, sizeof(unsigned long long int)* blocks)){
+		std::cout << "Decomp: Could not allocate space for offset array" << std::endl;
+	}
+	if(cudaSuccess != cudaMalloc((void**)&blockSizes_gpu, sizeof(unsigned long long int)* blocks)){
+		std::cout << "Decomp: Could not allocate space for block sizes array" << std::endl;
+	}
 	cudaMemcpy(data_gpu, data, sizeof(int)*dataSize, cudaMemcpyHostToDevice);
 	cudaMemcpy(offsets_gpu, offsets, sizeof(unsigned long long int)*blocks, cudaMemcpyHostToDevice);
 	cudaMemcpy(blockSizes_gpu, blockSizes, sizeof(unsigned long long int) * blocks, cudaMemcpyHostToDevice);
@@ -66,7 +72,9 @@ unsigned int* decompress(
 	}
 	SAFE_ASSIGN(outSize, realSize);
 //	free(counts_cpu);
-	cudaMalloc((void**)&result_gpu, sizeof(int) * outputSize);
+	if(cudaSuccess != cudaMalloc((void**)&result_gpu, sizeof(int) * outputSize)){
+		std::cout << "Decomp: Could not allocate space for results array" << std::endl;
+	}
 
 	decompressWords<<<blocks,blockDim>>>(data_gpu, result_gpu, offsets_gpu, blockSizes_gpu, blocks, dataSize);
 	cudaFree(data_gpu);
@@ -74,11 +82,18 @@ unsigned int* decompress(
 	cudaFree(blockSizes_gpu);
 
 	blockCount = outputSize / 1024;
+
 	if(dataSize % 1024 > 0){
 		blockCount++;
 	}
 
-	cudaMalloc((void**)&finalOutput_gpu, sizeof(int)*outputSize);
+	cudaError_t res = cudaMalloc((void**)&finalOutput_gpu, sizeof(int)*outputSize);
+	if(cudaSuccess != res){
+		std::cout << "Error" << std::endl;
+		std::cout << cudaGetErrorName(res) << std::endl;
+		std::cout << "Decomp: Could not allocate space for final output array" << std::endl;
+
+	}
 	mergeWords<<<blockCount,blockDim>>>(result_gpu, finalOutput_gpu, outputSize);
 	cudaFree(result_gpu);
 
@@ -99,77 +114,3 @@ unsigned int* decompress(
 	return output_cpu;
 }
 
-unsigned int* reorder(
-		unsigned long long int* blockSizes,
-		unsigned long long int* offsets,
-		unsigned long long int blockCount,
-		unsigned int* data,
-		unsigned long long int dataSize,
-		float* pTransferToDeviceTime,
-		float* pReoderingTime,
-		float* ptranserFromDeviceTime
-		){
-
-	// times to be measured
-	float transferToDeviceTime;
-	float reorderingTime;
-	float transferFromDeviceTime;
-
-	CREATE_TIMER
-	START_TIMER
-
-	unsigned int *data_gpu, *output_gpu;
-	unsigned long long int* blockSizes_gpu, *offsets_gpu, *outputOffsets_gpu;
-	// allocate gpu memory
-	cudaMalloc((void**)&blockSizes_gpu, sizeof(unsigned long long int)*blockCount);
-	cudaMalloc((void**)&offsets_gpu, sizeof(unsigned long long int)*blockCount);
-	cudaMalloc((void**)&data_gpu, sizeof(int)*dataSize);
-	cudaMalloc((void**)&output_gpu, sizeof(int)*dataSize);
-	cudaMalloc((void**)&outputOffsets_gpu, sizeof(unsigned long long int)*blockCount);
-
-	cudaMemcpy(blockSizes_gpu, blockSizes, sizeof(unsigned long long int) * blockCount, cudaMemcpyHostToDevice);
-	cudaMemcpy(offsets_gpu, offsets, sizeof(unsigned long long int) * blockCount, cudaMemcpyHostToDevice);
-	cudaMemcpy(data_gpu, data, sizeof(int) * dataSize, cudaMemcpyHostToDevice);
-
-	STOP_TIMER
-	GET_RESULT(transferToDeviceTime)
-
-	START_TIMER
-
-	thrust::device_ptr<unsigned long long int> pBlockSizes(blockSizes_gpu);
-	thrust::device_ptr<unsigned long long int> pOutputOffets(outputOffsets_gpu);
-
-	thrust::exclusive_scan(pBlockSizes, pBlockSizes + blockCount, pOutputOffets);
-
-	int b = dataSize / 1024;
-
-	if(dataSize % 1024 > 0){
-		b++;
-	}
-
-//	reoderKernel<<<b,<te dim3(32, 32)>>>(blockSizes_gpu, offsets_gpu, outputOffsets_gpu, blockCount, data_gpu, dataSize, output_gpu);
-
-	STOP_TIMER
-	GET_RESULT(reorderingTime)
-
-	START_TIMER
-
-	unsigned int* output = (unsigned int*) malloc(sizeof(int) * dataSize);
-	cudaMemcpy(output, output_gpu, sizeof(int) * dataSize, cudaMemcpyDeviceToHost);
-	cudaFree(blockSizes_gpu);
-	cudaFree(offsets_gpu);
-	cudaFree(data_gpu);
-	cudaFree(outputOffsets_gpu);
-	cudaFree(output_gpu);
-
-
-	STOP_TIMER
-	GET_RESULT(transferFromDeviceTime)
-
-	SAFE_ASSIGN(pReoderingTime, reorderingTime);
-	SAFE_ASSIGN(pTransferToDeviceTime, transferToDeviceTime);
-	SAFE_ASSIGN(ptranserFromDeviceTime, transferFromDeviceTime);
-
-	return output;
-
-}
