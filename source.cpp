@@ -85,8 +85,8 @@ int main(){
 				d_globalDecompression += d_decompression;
 				d_globalTransferFromDevice += d_transferFromDevice;
 				d_globalTransferToDevice += d_transferToDevice;
-				globalCompressedSize = compressedSize * sizeof(int);
-				globalDecompressedSize = decompressedSize * sizeof(int);
+				globalCompressedSize = compressedSize;
+				globalDecompressedSize = decompressedSize;
 				free(decompressed);
 			}
 			fs << dataSize * sizeof(int) << ",";
