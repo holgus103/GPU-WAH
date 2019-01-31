@@ -39,6 +39,15 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
 	}
 }
 
+/*
+ * Device function performing compression
+ *
+ * Parameters:
+ * data - device pointer to data to be compressed
+ * output - device pointer to the output array
+ * blockCounts - device pointer to an array with block sizes
+ * dataSize - input data size in integers
+ */
 __global__ void compressData(unsigned int* data, unsigned int* output, unsigned long long int* blockCounts, int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
@@ -52,12 +61,14 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	__shared__ bool merged[32];
 
 
+// -- Prepare initial variables and read data --
+
 	// get thread id
 	int id = threadIdx.x;
 	int id_global = blockIdx.x * (31*32) + threadIdx.y *31 + id;
 	unsigned int word = 0;
-	// retrieve word, only first 31 threads
 	if(id_global > dataSize) return;
+	// retrieve word, only first 31 threads
 	if (id < WARP_SIZE - 1) {
 		word = data[id_global];
 	}
@@ -67,6 +78,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	//word = (__shfl_down(word, 1) & (ONES31 >> id)) << id | (word & TOP31ONES) >> (32 - id);
 	word = ONES31 & ((__shfl_up(word, 1) >> (32 - id)) | (word << id));
 
+
+// -- Recognize and mark words --
 
 	// word info variables
 	int ones = 0;
@@ -80,6 +93,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	if (word == ZEROS) {
 		zeros |= 1 << id;
 		type = WORD_ZEROS;
+		// last word in a warp marks word as zeros
 		markEndWordTypes(WORD_ZEROS, endings, id);
 	}
 
@@ -87,11 +101,13 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	else if (word == ONES31) {
 		ones |= 1 << id;
 		type = WORD_ONES;
+		// last word in a warp marks word as ones
 		markEndWordTypes(WORD_ONES, endings, id);
 	}
 	else
 	{
 		type = WORD_LITERAL;
+		// last word in a warp marks word as literal
 		markEndWordTypes(WORD_LITERAL, endings, id);
 	}
 
@@ -100,7 +116,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	ones = orWithinWarp(ones);
 	literals = ~(zeros | ones);
 
-	// send complete information to other threads
+// send complete information to other threads
 //	if (id == WARP_LEADER) {
 //		zeros = __shfl(zeros, 0);
 //		ones = __shfl(ones, 0);
@@ -110,11 +126,12 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	int n = 0x3 << id;
 	int flags = BIT31;
 	bool idle = true;
+
 	// if is not last
 	if (id < 31) {
 		int res = 1 << id;
 		if (((n & zeros) == res || (n & ones) == res || (literals & (1 << id)) > 0)) {
-			// mark endings
+			// detect endings of sequences of words of the same type and mark them
 			flags |= 1 << id;
 			idle = false;
 		}
@@ -122,6 +139,9 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	else{
 		idle = false;
 	}
+
+// -- Calculate block size --
+
 	// exchange endings 
 	flags = orWithinWarp(flags);
 	int blockSize = 1;
@@ -132,7 +152,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 		beginnings[threadIdx.y] = type;
 	}
 
-	// calculate the number of words within a block
+	// calculate the number of words within a compressed word
 	if (!idle) {
 		for (int i = id-1; i >= 0; i--) {
 			if ((flags & (1 << i)) > 0) {
@@ -161,6 +181,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	// sync all threads within block
 	__syncthreads();
 
+// -- Merging warps --
+
 	// the first warp scans the array and gets total block word size
 	// then calculates offset
 	int mergeShift = 0;
@@ -169,14 +191,14 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 		int count = counts[id];
 		// used to not check the same condition twice
 		bool satisfiedMergingConditions = false;
-		// only execute if it's a non
-		if((id == warpSize - 1) || (endings[id] != beginnings[id+1]) || endings[id] == WORD_LITERAL){
+		// only execute if the current word will not be merged into another one
+		if((id == warpSize - 1) || (endings[id] != beginnings[id+1]) || endings[id] == WORD_LITERAL || counts[id] > 1){
 			int i = 1;
 			satisfiedMergingConditions = true;
 			int bonus = 0;
 			// calculate merge shifts
 			while(true){
-				// has 1 length and words match
+				// check for warps with length 1 and the same word as our beginning
 				if(i < id && counts[id - i] == 1 && beginnings[id] == endings[id-i] && beginnings[id] != WORD_LITERAL){
 					mergeShift++;
 					merged[id - i] = true;
@@ -184,6 +206,7 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 					i++;
 
 				}
+				// check for warps that can be partially merged - with the same ending as our beginning
 				else if(i <= id && beginnings[id] == endings[id - i] && beginnings[id] != WORD_LITERAL){
 					mergeShift++;
 					merged[id - i] = true;
@@ -198,8 +221,10 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 		if(!satisfiedMergingConditions){
 			endLengths[id] = 0;
 		}
+			// let every thread get the shift for its warp
 			mergeShift = localScan(mergeShift, id);
 			int blockOffset = localScan(count, id);
+			// get the offset for the current warp within the block and store it in counts
 			counts[id] = blockOffset - count - mergeShift;
 	}
 
@@ -208,6 +233,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 	IF_LAST{
 		idle = merged[threadIdx.y];
 	}
+
+// -- Writing final output for the block --
 
 	// get global offset for warp and warp offset
 	if(!idle){
@@ -234,6 +261,15 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 
 }
 
+
+/*
+ * Device function moving data from different compressed blocks and removing gaps
+ *
+ * Parameters:
+ * initialOutput - device pointer to the compressed data with gaps
+ * finalOutput - device pointer to the output array
+ * blockCounts - device pointer to an array with block sizes
+ */
 __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned long long int* blockCounts){
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
 	unsigned int word = initialOutput[globalId];
@@ -243,6 +279,15 @@ __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput,
 	finalOutput[blockOffset + blockId] = word;
 }
 
+
+/*
+ * Device function moving data from different compressed blocks and removing gaps
+ *
+ * Parameters:
+ * data_gpu - device pointer to the compressed data
+ * counts_gpu - device pointer to an array storing sizes of blocks
+ * dataSize - input data size in integers
+ */
 __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
@@ -263,14 +308,27 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
 
 }
 
+
+/*
+ * Device function performing decompression
+ *
+ * Parameters:
+ * data_gpu - device pointer to the compressed data
+ * counts_gpu - device pointer to an array storing sizes of blocks
+ * result_gpu - device pointer to the output array
+ * dataSize - input data size in integers
+ */
 __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize){
 	// get global id
 	unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// out of range
 	if(globalId >= dataSize) return;
+	// read word
 	unsigned int word = data_gpu[globalId];
+	// read offset for block
 	unsigned long long int offset = counts_gpu[globalId];
-//	printf("id : %d offset: %d \n", globalId, offset);
+	//printf("id : %d offset: %d \n", globalId, offset);
+	// is filler word
 	if((BIT31 & word) > 0){
 
 		int count = word & (BIT30 - 1);
@@ -290,6 +348,7 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* 
 		}
 
 	}
+	// is literal word
 	else{
 		result_gpu[offset] = word;
 	}
@@ -299,6 +358,14 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* 
 
 }
 
+/*
+ * Device function converting 32 31-bit words into 31 32-bit ones
+ *
+ * Parameters:
+ * result_gpu - device pointer to the decompressed data
+ * finalOutput_gpu - device pointer to the final output array
+ * dataSize - input data size in integers
+ */
 __global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;

@@ -26,7 +26,18 @@ struct is_zero
 };
 
 
-// datasize is in integers!
+
+/*
+ * Host function performing compression
+ *
+ * Parameters:
+ * data_cpu - host pointer to data to be compressed
+ * dataSize - size of the data in integers
+ * outSize - size of the output in integers
+ * pTransferToDeviceTime - pointer to the output parameter storing the transfer time to the device
+ * pCompressionTime - pointer to the output parameter storing the compression time
+ * ptranserFromDeviceTime - pointer to the output parameter storing the transfer time from the device
+ */
 unsigned int* compress(
 		unsigned int* data_cpu,
 		unsigned long long int dataSize,
@@ -34,6 +45,8 @@ unsigned int* compress(
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
+
+// -- Variable initialization --
 
 	// times to be measured
 	float transferToDeviceTime;
@@ -45,12 +58,15 @@ unsigned int* compress(
 	cudaEventCreate(&start);
 	cudaEventRecord(start,0);
 
+	// calculate the number of blocks necessary
 	int blockCount = dataSize / (31*32);
 
+	// if not divisible, add another additional block
 	if(dataSize % (31*32)> 0){
 		blockCount++;
 	}
 
+	// device data pointers
 	unsigned int *data_gpu, *compressed_gpu, *finalOutput_gpu;
 	unsigned long long int* blockCounts_gpu;
 
@@ -64,7 +80,10 @@ unsigned int* compress(
 		maxExpectedSize /= 31;
 	}
 
+	// initialize block dimensions
 	dim3 blockSize = dim3(32, 32, 1);
+
+// -- Memory allocation --
 
 	// allocate memory on the device
 	if(cudaSuccess != cudaMalloc((void**)&data_gpu, dataSize * sizeof(int))){
@@ -83,6 +102,8 @@ unsigned int* compress(
 		return NULL;
 	}
 
+// -- Data transfer --
+
 	// copy input
 	if(cudaSuccess != cudaMemcpy(data_gpu, data_cpu, dataSize*sizeof(int), cudaMemcpyHostToDevice)){
 		std::cout << "Could not copy input" << std::endl;
@@ -98,11 +119,13 @@ unsigned int* compress(
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(&transferToDeviceTime, start,stop);
 
+// -- Data compression --
+
 	// restart time measuring
 	cudaEventCreate(&start);
 	cudaEventRecord(start,0);
 
-	// call compression kernel
+	// call compression kernel, merges words within a block
 	compressData<<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, dataSize);
 
 	// remove unnecessary data
@@ -112,6 +135,7 @@ unsigned int* compress(
 
 	unsigned long long int lastWordNumber;
 
+	// get the size of the last block
 	if(cudaSuccess != cudaMemcpy(&lastWordNumber, blockCounts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block count" << std::endl;
 		cudaFree(compressed_gpu);
@@ -122,6 +146,7 @@ unsigned int* compress(
 	thrust::exclusive_scan(blockCountsPtr, blockCountsPtr + blockCount, blockCountsPtr);
 	unsigned long long int  lastBlockOffset;
 
+	// get the offset of the last block
 	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block offset" << std::endl;
 		cudaFree(compressed_gpu);
@@ -146,21 +171,29 @@ unsigned int* compress(
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(&compressionTime, start,stop);
 
+// -- Move decompressed data from device to host --
+
 	// restart time measuring
 	cudaEventCreate(&start);
 	cudaEventRecord(start,0);
 
 	// allocate memory for results
 	unsigned int* compressed_cpu = (unsigned int*)malloc(sizeof(int)* outputSize);
+
 	// copy compressed data
 	if(cudaSuccess != cudaMemcpy((void*)compressed_cpu, (void*)finalOutput_gpu, outputSize * sizeof(int), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy final output" << std::endl;
 	}
 
+// -- Cleanup --
+
 	// free gpu memory
 	cudaFree((void*)compressed_gpu);
 	cudaFree((void*)blockCounts_gpu);
 	cudaFree((void*)finalOutput_gpu);
+
+
+// -- Get stats and save them to output parameters --
 
 	// get transfer time
 	cudaEventCreate(&stop);
