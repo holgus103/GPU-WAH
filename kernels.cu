@@ -48,7 +48,8 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
  * blockCounts - device pointer to an array with block sizes
  * dataSize - input data size in integers
  */
-__global__ void compressData(unsigned int* data, unsigned int* output, unsigned long long int* blockCounts, int dataSize) {
+template<class T>
+__global__ void compressData(unsigned int* data, unsigned int* output, T* blockCounts, int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
 	// length of the last word in a warp
@@ -261,6 +262,9 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
 
 }
 
+template __global__ void compressData<unsigned long long int>(unsigned int* data, unsigned int* output, unsigned long long int* blockCounts, int dataSize);
+template __global__ void compressData<unsigned int>(unsigned int* data, unsigned int* output, unsigned int* blockCounts, int dataSize);
+
 
 /*
  * Device function moving data from different compressed blocks and removing gaps
@@ -270,7 +274,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, unsigned 
  * finalOutput - device pointer to the output array
  * blockCounts - device pointer to an array with block sizes
  */
-__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, unsigned long long int* blockCounts){
+template<class T>
+__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, T* blockCounts){
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
 	unsigned int word = initialOutput[globalId];
 	if(word == 0) return;
@@ -278,6 +283,9 @@ __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput,
 	int blockId = threadIdx.x + threadIdx.y * blockDim.x;
 	finalOutput[blockOffset + blockId] = word;
 }
+
+template __global__ void moveData<unsigned long long int>(unsigned int* initialOutput, unsigned int* finalOutput, unsigned long long int* blockCounts);
+template __global__ void moveData<unsigned int>(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts);
 
 
 /*
@@ -288,7 +296,8 @@ __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput,
  * counts_gpu - device pointer to an array storing sizes of blocks
  * dataSize - input data size in integers
  */
-__global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize){
+template<class T>
+__global__ void getCounts(unsigned int* data_gpu, T* counts_gpu, T dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// is within the data range
@@ -308,6 +317,9 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
 
 }
 
+template __global__ void getCounts<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize);
+template __global__ void getCounts<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int dataSize);
+
 
 /*
  * Device function performing decompression
@@ -318,7 +330,8 @@ __global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts
  * result_gpu - device pointer to the output array
  * dataSize - input data size in integers
  */
-__global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize){
+template<class T>
+__global__ void decompressWords(unsigned int* data_gpu, T* counts_gpu, unsigned int* result_gpu, T dataSize){
 	// get global id
 	unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// out of range
@@ -354,9 +367,10 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* 
 	}
 //	printf("%d", offset);
 
-
-
 }
+
+template __global__ void decompressWords<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize);
+template __global__ void decompressWords<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int* result_gpu, unsigned int dataSize);
 
 /*
  * Device function converting 32 31-bit words into 31 32-bit ones
@@ -366,7 +380,8 @@ __global__ void decompressWords(unsigned int* data_gpu, unsigned long long int* 
  * finalOutput_gpu - device pointer to the final output array
  * dataSize - input data size in integers
  */
-__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize){
+template<class T>
+__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, T dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	int id = threadIdx.x;
@@ -384,5 +399,5 @@ __global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_g
 
 }
 
-
-
+template __global__ void mergeWords<unsigned long long int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize);
+template __global__ void mergeWords<unsigned int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned int dataSize);

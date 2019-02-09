@@ -38,10 +38,11 @@ struct is_zero
  * pCompressionTime - pointer to the output parameter storing the compression time
  * ptranserFromDeviceTime - pointer to the output parameter storing the transfer time from the device
  */
+template<class T>
 unsigned int* compress(
 		unsigned int* data_cpu,
-		unsigned long long int dataSize,
-		unsigned long long int* outSize,
+		T dataSize,
+		T* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime){
@@ -68,7 +69,7 @@ unsigned int* compress(
 
 	// device data pointers
 	unsigned int *data_gpu, *compressed_gpu, *finalOutput_gpu;
-	unsigned long long int* blockCounts_gpu;
+	T* blockCounts_gpu;
 
 	// calculate max output size (one extra bit for every 31 bits)
 	unsigned long long int maxExpectedSize = 8*sizeof(int)*dataSize;
@@ -95,7 +96,7 @@ unsigned int* compress(
 		cudaFree(data_gpu);
 		return NULL;
 	}
-	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(unsigned long long int))){
+	if(cudaSuccess != cudaMalloc((void**)&blockCounts_gpu, blockCount* sizeof(T))){
 		std::cout << "Could not allocate space for the block sizes" << std::endl;
 		cudaFree(data_gpu);
 		cudaFree(compressed_gpu);
@@ -126,17 +127,17 @@ unsigned int* compress(
 	cudaEventRecord(start,0);
 
 	// call compression kernel, merges words within a block
-	compressData<<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, dataSize);
+	compressData<T><<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, dataSize);
 
 	// remove unnecessary data
 	cudaFree((void*)data_gpu);
-	thrust::device_ptr<unsigned long long int> blockCountsPtr(blockCounts_gpu);
+	thrust::device_ptr<T> blockCountsPtr(blockCounts_gpu);
 
 
-	unsigned long long int lastWordNumber;
+	T lastWordNumber;
 
 	// get the size of the last block
-	if(cudaSuccess != cudaMemcpy(&lastWordNumber, blockCounts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&lastWordNumber, blockCounts_gpu + (blockCount - 1), sizeof(T), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block count" << std::endl;
 		cudaFree(compressed_gpu);
 		cudaFree(blockCounts_gpu);
@@ -144,17 +145,17 @@ unsigned int* compress(
 	}
 
 	thrust::exclusive_scan(blockCountsPtr, blockCountsPtr + blockCount, blockCountsPtr);
-	unsigned long long int  lastBlockOffset;
+	T  lastBlockOffset;
 
 	// get the offset of the last block
-	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost)){
+	if(cudaSuccess != cudaMemcpy(&lastBlockOffset, blockCounts_gpu + (blockCount - 1), sizeof(T), cudaMemcpyDeviceToHost)){
 		std::cout << "Could not copy last block offset" << std::endl;
 		cudaFree(compressed_gpu);
 		cudaFree(blockCounts_gpu);
 		return NULL;
 	}
 
-	unsigned long long int outputSize = lastBlockOffset + lastWordNumber;
+	T outputSize = lastBlockOffset + lastWordNumber;
 	SAFE_ASSIGN(outSize, outputSize)
 	if(cudaSuccess != cudaMalloc((void**)&finalOutput_gpu, sizeof(int) * outputSize)){
 		std::cout << "Could not allocate final Output" << std::endl;
@@ -163,7 +164,7 @@ unsigned int* compress(
 		return NULL;
 	}
 	// call merge kernel
-	moveData<<<blockCount, blockSize>>>(compressed_gpu, finalOutput_gpu, blockCounts_gpu);
+	moveData<T><<<blockCount, blockSize>>>(compressed_gpu, finalOutput_gpu, blockCounts_gpu);
 
 	// get compression time
 	cudaEventCreate(&stop);
@@ -209,4 +210,19 @@ unsigned int* compress(
 }
 
 
+template unsigned int* compress<unsigned long long int>(
+		unsigned int* data_cpu,
+		unsigned long long int dataSize,
+		unsigned long long int* outSize,
+		float* pTransferToDeviceTime,
+		float* pCompressionTime,
+		float* ptranserFromDeviceTime);
+
+template unsigned int* compress<unsigned int>(
+		unsigned int* data_cpu,
+		unsigned int dataSize,
+		unsigned int* outSize,
+		float* pTransferToDeviceTime,
+		float* pCompressionTime,
+		float* ptranserFromDeviceTime);
 

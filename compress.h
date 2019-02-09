@@ -8,11 +8,11 @@
 #define COMPRESS_H_
 
 
-
+template<class T>
 unsigned int* compress(
 		unsigned int* data_cpu,
-		unsigned long long int dataSize,
-		unsigned long long int* outputSize,
+		T dataSize,
+		T* outputSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);

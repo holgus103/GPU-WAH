@@ -35,7 +35,10 @@ bool blockMergeAlternatingTest();
 bool blockMergeFinalLiterals();
 bool blockMergeWanderingLiterals();
 bool multiBlockTest();
+
+template<class T>
 bool compressAndDecompressTest();
+
 bool randomDataTest();
 bool zerosTest();
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN);

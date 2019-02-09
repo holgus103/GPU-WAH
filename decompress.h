@@ -8,10 +8,11 @@
 #ifndef DECOMPRESS_H_
 #define DECOMPRESS_H_
 
+template<class T>
 unsigned int* decompress(
 		unsigned int* data,
-		unsigned long long int dataSize,
-		unsigned long long int* outSize,
+		T dataSize,
+		T* outSize,
 		float* pTransferToDeviceTime,
 		float* pCompressionTime,
 		float* ptranserFromDeviceTime);
