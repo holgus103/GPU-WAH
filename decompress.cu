@@ -78,7 +78,7 @@ unsigned int* decompress(
 	// offset of the last block
 	T lastOffset;
 	// copy the offset of the last block
-	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(long long int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(&lastOffset, counts_gpu + (dataSize - 1), sizeof(T), cudaMemcpyDeviceToHost);
 	// calculate output size in 31-bit words
 	unsigned long long int outputSize = lastBlockSize + lastOffset;
 	// calculate the real output size in integers

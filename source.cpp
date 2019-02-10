@@ -22,7 +22,8 @@ int main()
 	compressAndDecompressTest<unsigned int>();
 //	zerosTest();
 
-//	randomDataTest();
+//	randomDataTest<unsigned long long int>();
+//	randomDataTest<unsigned int>();
 	return 0;
 }
 

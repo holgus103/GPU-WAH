@@ -250,6 +250,7 @@ TEST_DEC(compressAndDecompressTest)
 	T compressedSize, decompressedSize;
 	unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
 	unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	printf("original size: %d, decompressed size: %d");
 	if(decompressedSize != size){
 		printf("decompressed size does not match");
 		return false;
@@ -290,25 +291,27 @@ template bool compressAndDecompressTest<unsigned int>();
 //	free(decomp);
 //TEST_END
 //
-//TEST_DEC(randomDataTest)
-//	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-//	int blocks = 1024*128;
-//	int size = 31*32*blocks; //16MB of ints
-//	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-//	generateRandomData(data, size, (1 << 4));
-////	std::ofstream outFile;
-////	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
-////	outFile.write((char*)data, sizeof(int)*size);
-////	outFile.close();
-//	unsigned long long int compressedSize, decompressedSize;
-//	unsigned int* res = compress(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-//	unsigned int* decomp = decompress(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-//	std::cout << size << std::endl;
-//	std::cout << compressedSize << std::endl;
-//	std::cout << decompressedSize <<std::endl;
-//	ASSERT(decomp, data, size)
-//	free(decomp);
-//TEST_END
 
+template<class T>
+TEST_DEC(randomDataTest)
+	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
+	int blocks = 1024*128;
+	int size = 31*32*blocks; //16MB of ints
+	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
+	generateRandomData(data, size, (1 << 4));
+//	std::ofstream outFile;
+//	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
+//	outFile.write((char*)data, sizeof(int)*size);
+//	outFile.close();
+	T compressedSize, decompressedSize;
+	unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	std::cout << size << std::endl;
+	std::cout << compressedSize << std::endl;
+	std::cout << decompressedSize <<std::endl;
+	ASSERT(decomp, data, size)
+	free(decomp);
+TEST_END
 
-
+template bool randomDataTest<unsigned long long int>();
+template bool randomDataTest<unsigned int>();

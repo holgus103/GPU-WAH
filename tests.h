@@ -39,6 +39,8 @@ bool multiBlockTest();
 template<class T>
 bool compressAndDecompressTest();
 
+template<class T>
 bool randomDataTest();
+
 bool zerosTest();
 void generateRandomData(unsigned int* tab, unsigned int size, unsigned int everyN);
