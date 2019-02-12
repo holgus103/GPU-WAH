@@ -9,10 +9,16 @@ CU_SRCS += \
 ../kernels.cu 
 
 CPP_SRCS += \
+../CompressedPackage.cpp \
+../PackageBase.cpp \
+../RegularPackage.cpp \
 ../source.cpp \
 ../tests.cpp 
 
 OBJS += \
+./CompressedPackage.o \
+./PackageBase.o \
+./RegularPackage.o \
 ./compress.o \
 ./decompress.o \
 ./kernels.o \
@@ -25,24 +31,27 @@ CU_DEPS += \
 ./kernels.d 
 
 CPP_DEPS += \
+./CompressedPackage.d \
+./PackageBase.d \
+./RegularPackage.d \
 ./source.d \
 ./tests.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-%.o: ../%.cu
-	@echo 'Building file: $<'
-	@echo 'Invoking: NVCC Compiler'
-	/usr/local/cuda-8.0/bin/nvcc -O3 -gencode arch=compute_60,code=sm_60  -odir "." -M -o "$(@:%.o=%.d)" "$<"
-	/usr/local/cuda-8.0/bin/nvcc -O3 --compile --relocatable-device-code=false -gencode arch=compute_60,code=compute_60 -gencode arch=compute_60,code=sm_60  -x cu -o  "$@" "$<"
-	@echo 'Finished building: $<'
-	@echo ' '
-
 %.o: ../%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: NVCC Compiler'
 	/usr/local/cuda-8.0/bin/nvcc -O3 -gencode arch=compute_60,code=sm_60  -odir "." -M -o "$(@:%.o=%.d)" "$<"
 	/usr/local/cuda-8.0/bin/nvcc -O3 --compile  -x c++ -o  "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+%.o: ../%.cu
+	@echo 'Building file: $<'
+	@echo 'Invoking: NVCC Compiler'
+	/usr/local/cuda-8.0/bin/nvcc -O3 -gencode arch=compute_60,code=sm_60  -odir "." -M -o "$(@:%.o=%.d)" "$<"
+	/usr/local/cuda-8.0/bin/nvcc -O3 --compile --relocatable-device-code=false -gencode arch=compute_60,code=compute_60 -gencode arch=compute_60,code=sm_60  -x cu -o  "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

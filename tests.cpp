@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include "RegularPackage.h"
 
 /*
  * 1. 0 | 8
@@ -247,32 +248,37 @@ TEST_DEC(compressAndDecompressTest)
 	for(int j = 0; j < blocks; j++){
 		generateWanderingTestData(data, j*31*32);
 	}
-	T compressedSize, decompressedSize;
-	unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-	printf("original size: %d, decompressed size: %d");
-	if(decompressedSize != size){
-		printf("decompressed size does not match");
-		return false;
-	}
-	ASSERT(decomp, data, decompressedSize)
-	free(decomp);
+	RegularPackage<T> package = RegularPackage<T>();
+	//T compressedSize, decompressedSize;
+	package.compressData(data, size);
+	//unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+	package.decompressData();
+	//unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+	package.performAssert();
+	//printf("original size: %d, decompressed size: %d");
+	//if(decompressedSize != size){
+	//	printf("decompressed size does not match");
+	//	return false;
+	//}
+	//ASSERT(decomp, data, decompressedSize)
+	free(package.getDecompressed());
 	free(data);
 
+	PackageBase::Times t = package.getTimes();
 	printf("Compression \n");
-	printf("Transfer to device: %f \n", c_transferToDevice);
-	printf("Compression: %f \n", c_compression);
-	printf("Transfer from device: %f \n", c_transferFromDevice);
+	printf("Transfer to device: %f \n", t.c_transferToDevice);
+	printf("Compression: %f \n", t.c_compression);
+	printf("Transfer from device: %f \n", t.c_transferFromDevice);
 
 	printf("Decompression \n");
-	printf("Transfer to device: %f \n", d_transferToDevice);
-	printf("Compression: %f \n", d_compression);
-	printf("Transfer from device: %f \n", d_transferFromDevice);
+	printf("Transfer to device: %f \n", t.d_transferToDevice);
+	printf("Compression: %f \n", t.d_compression);
+	printf("Transfer from device: %f \n", t.d_transferFromDevice);
 TEST_END
 
-//template bool compressAndDecompressTest<unsigned int>();
-template bool compressAndDecompressTest<unsigned long long int>();
 template bool compressAndDecompressTest<unsigned int>();
+
+template bool compressAndDecompressTest<unsigned long long int>();
 
 //TEST_DEC(zerosTest)
 //	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;

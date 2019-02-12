@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iostream>
 
 #define ASSERT_MODULO(RES, EX, LEN, MODULO)	\
 for (int i = 0; i < LEN; i++) { \
@@ -19,7 +19,6 @@ bool NAME(){\
 
 #define TEST_END\
 	std::cout << "succeeded" << std::endl;\
-	free(res);\
 	return true;\
 }
 
