@@ -261,7 +261,6 @@ TEST_DEC(compressAndDecompressTest)
 	//	return false;
 	//}
 	//ASSERT(decomp, data, decompressedSize)
-	free(package.getDecompressed());
 	free(data);
 
 	PackageBase::Times t = package.getTimes();
@@ -316,7 +315,7 @@ TEST_DEC(randomDataTest)
 	std::cout << compressedSize << std::endl;
 	std::cout << decompressedSize <<std::endl;
 	ASSERT(decomp, data, size)
-	free(decomp);
+	//free(decomp);
 TEST_END
 
 template bool randomDataTest<unsigned long long int>();
