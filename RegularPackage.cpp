@@ -11,6 +11,7 @@
 #include "timeMeasuring.h"
 #include <stdlib.h>
 
+
 template<class T>
 RegularPackage<T>::RegularPackage() {
 	// TODO Auto-generated constructor stub
@@ -24,25 +25,11 @@ RegularPackage<T>::~RegularPackage() {
 
 template<class T>
 void RegularPackage<T>::compressData(unsigned int* p_data, unsigned long long int p_size){
-	if(this->compressedData != NULL){
-		free(this->compressedData);
-		this->compressedData = NULL;
-	}
-
 	CompressedPackage<T>::compressData(p_data, p_size);
-	this->compressedData = compress<T>(
-			this->data,
-			this->size,
-			&(this->compressedSize),
-			&(this->c_transferToDevice),
-			&(this->c_compression),
-			&(this->c_transferFromDevice)
-	);
-
 }
 
 template<class T>
-unsigned int* RegularPackage<T>::decompressData(){
+void RegularPackage<T>::decompressData(){
 
 	if(this->decompressedData != NULL){
 		free(this->decompressedData);

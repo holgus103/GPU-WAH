@@ -49,7 +49,7 @@ __inline__ __device__ void writeEndingSize(int id, int* lengths, int size){
  * dataSize - input data size in integers
  */
 template<class T>
-__global__ void compressData(unsigned int* data, unsigned int* output, T* blockCounts, int dataSize) {
+__global__ void gpu_compressData(unsigned int* data, unsigned int* output, T* blockCounts, int dataSize) {
 	// count of words for every warp
 	__shared__ int counts[32];
 	// length of the last word in a warp
@@ -262,8 +262,8 @@ __global__ void compressData(unsigned int* data, unsigned int* output, T* blockC
 
 }
 
-template __global__ void compressData<unsigned long long int>(unsigned int* data, unsigned int* output, unsigned long long int* blockCounts, int dataSize);
-template __global__ void compressData<unsigned int>(unsigned int* data, unsigned int* output, unsigned int* blockCounts, int dataSize);
+template __global__ void gpu_compressData<unsigned long long int>(unsigned int* data, unsigned int* output, unsigned long long int* blockCounts, int dataSize);
+template __global__ void gpu_compressData<unsigned int>(unsigned int* data, unsigned int* output, unsigned int* blockCounts, int dataSize);
 
 
 /*
@@ -275,7 +275,7 @@ template __global__ void compressData<unsigned int>(unsigned int* data, unsigned
  * blockCounts - device pointer to an array with block sizes
  */
 template<class T>
-__global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput, T* blockCounts){
+__global__ void gpu_moveData(unsigned int* initialOutput, unsigned int* finalOutput, T* blockCounts){
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + threadIdx.y * blockDim.x + threadIdx.x;
 	unsigned int word = initialOutput[globalId];
 	if(word == 0) return;
@@ -284,8 +284,8 @@ __global__ void moveData(unsigned int* initialOutput, unsigned int* finalOutput,
 	finalOutput[blockOffset + blockId] = word;
 }
 
-template __global__ void moveData<unsigned long long int>(unsigned int* initialOutput, unsigned int* finalOutput, unsigned long long int* blockCounts);
-template __global__ void moveData<unsigned int>(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts);
+template __global__ void gpu_moveData<unsigned long long int>(unsigned int* initialOutput, unsigned int* finalOutput, unsigned long long int* blockCounts);
+template __global__ void gpu_moveData<unsigned int>(unsigned int* initialOutput, unsigned int* finalOutput, unsigned int* blockCounts);
 
 
 /*
@@ -297,7 +297,7 @@ template __global__ void moveData<unsigned int>(unsigned int* initialOutput, uns
  * dataSize - input data size in integers
  */
 template<class T>
-__global__ void getCounts(unsigned int* data_gpu, T* counts_gpu, T dataSize){
+__global__ void gpu_getCounts(unsigned int* data_gpu, T* counts_gpu, T dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// is within the data range
@@ -317,8 +317,8 @@ __global__ void getCounts(unsigned int* data_gpu, T* counts_gpu, T dataSize){
 
 }
 
-template __global__ void getCounts<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize);
-template __global__ void getCounts<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int dataSize);
+template __global__ void gpu_getCounts<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize);
+template __global__ void gpu_getCounts<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int dataSize);
 
 
 /*
@@ -331,7 +331,7 @@ template __global__ void getCounts<unsigned int>(unsigned int* data_gpu, unsigne
  * dataSize - input data size in integers
  */
 template<class T>
-__global__ void decompressWords(unsigned int* data_gpu, T* counts_gpu, unsigned int* result_gpu, T dataSize){
+__global__ void gpu_decompressWords(unsigned int* data_gpu, T* counts_gpu, unsigned int* result_gpu, T dataSize){
 	// get global id
 	unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	// out of range
@@ -369,8 +369,8 @@ __global__ void decompressWords(unsigned int* data_gpu, T* counts_gpu, unsigned 
 
 }
 
-template __global__ void decompressWords<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize);
-template __global__ void decompressWords<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int* result_gpu, unsigned int dataSize);
+template __global__ void gpu_decompressWords<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned int* result_gpu, unsigned long long int dataSize);
+template __global__ void gpu_decompressWords<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int* result_gpu, unsigned int dataSize);
 
 /*
  * Device function converting 32 31-bit words into 31 32-bit ones
@@ -381,7 +381,7 @@ template __global__ void decompressWords<unsigned int>(unsigned int* data_gpu, u
  * dataSize - input data size in integers
  */
 template<class T>
-__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, T dataSize){
+__global__ void gpu_mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, T dataSize){
 	// get global id
 	int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 	int id = threadIdx.x;
@@ -399,5 +399,5 @@ __global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_g
 
 }
 
-template __global__ void mergeWords<unsigned long long int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize);
-template __global__ void mergeWords<unsigned int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned int dataSize);
+template __global__ void gpu_mergeWords<unsigned long long int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize);
+template __global__ void gpu_mergeWords<unsigned int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned int dataSize);

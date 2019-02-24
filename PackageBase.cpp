@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 PackageBase::PackageBase() {
-	// TODO Auto-generated constructor stub
+	//initialize pointers as NULL
 	this->data = NULL;
 	this->compressedData = NULL;
 	this->decompressedData = NULL;
@@ -23,10 +23,8 @@ PackageBase::~PackageBase() {
 	// TODO Auto-generated destructor stub
 }
 
+void PackageBase::c_initializeVariables(unsigned int* in_data){
 
-
-
-void PackageBase::compressData(unsigned int* in_data, unsigned long long int in_size){
 	this->c_compression = 0;
 	this->c_transferFromDevice = 0;
 	this->c_transferToDevice = 0;
@@ -34,8 +32,35 @@ void PackageBase::compressData(unsigned int* in_data, unsigned long long int in_
 	this->d_compression = 0;
 	this->d_transferFromDevice = 0;
 	this->d_transferToDevice = 0;
-
 	this->data = in_data;
+}
+
+
+void PackageBase::compressData(unsigned int* in_data, unsigned long long int in_size){
+	if(this->compressedData != NULL){
+		free(this->compressedData);
+		this->compressedData = NULL;
+	}
+	// template method
+	this->c_initializeVariables(in_data);
+	this->c_allocateMemory();
+	this->c_copyToDevice();
+	this->c_runAlgorithm();
+	this->c_copyFromDevice();
+}
+
+
+void PackageBase::decompressData(){
+	if(this->decompressedData != NULL){
+		free(this->decompressedData);
+		this->decompressedData = NULL;
+	}
+	// template method
+	this->d_initializeVariables();
+	this->d_allocateMemory();
+	this->d_copyToDevice();
+	this->d_runAlgorithm();
+	this->d_copyFromDevice();
 }
 
 unsigned int* PackageBase::getCompressed(){

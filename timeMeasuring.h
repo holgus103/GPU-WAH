@@ -27,4 +27,11 @@
 #define SAFE_ASSIGN(P_VAR, VAR) \
 		if(P_VAR != NULL) (*P_VAR) = VAR;
 
+#define FREE_ALL \
+	if(data_gpu) cudaFree(data_gpu);\
+	if(compressed_gpu) cudaFree(compressed_gpu);\
+	if(blockCounts_gpu) cudaFree(blockCounts_gpu);\
+	if(orderArray_gpu) cudaFree(orderArray_gpu);\
+if(sizeCounter_gpu) cudaFree(sizeCounter_gpu);
+
 #endif /* TIMEMEASURING_H_ */
