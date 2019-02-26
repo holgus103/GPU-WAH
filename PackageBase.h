@@ -12,6 +12,9 @@
 #include <vector_types.h>
 
 class PackageBase {
+private:
+	void startTimer();
+	void getTimerMeasurement(float* pOutVal);
 protected:
 	float c_transferToDevice;
 	float c_transferFromDevice;
@@ -29,13 +32,11 @@ protected:
 	virtual void c_runAlgorithm() = 0;
 	virtual void c_copyFromDevice() = 0;
 	virtual void c_cleanup() = 0;
-	virtual void c_getStats() = 0;
 	virtual void d_initializeVariables() = 0;
 	virtual void d_allocateMemory() = 0;
 	virtual void d_copyToDevice() = 0;
 	virtual void d_runAlgorithm() = 0;
 	virtual void d_copyFromDevice() = 0;
-	virtual void d_cleanup() = 0;
 	virtual void d_getStats() = 0;
 public:
 

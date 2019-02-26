@@ -30,12 +30,6 @@ void CompressedPackage<T>::c_initializeVariables(unsigned int* in_data){
 	PackageBase::c_initializeVariables(in_data);
 
 	// -- Variable initialization --
-
-
-	// start measuring time
-	cudaEventCreate(&(this->start));
-	cudaEventRecord(this->start,0);
-
 	// calculate the number of blocks necessary
 	this->blockCount = this->size / (31*32);
 
@@ -89,12 +83,6 @@ void CompressedPackage<T>::c_copyToDevice(){
 			cudaFree(this->blockCounts_gpu);
 			return;
 		}
-
-		// get transfer time
-		cudaEventCreate(&(this->stop));
-		cudaEventRecord(this->stop,0);
-		cudaEventSynchronize(this->stop);
-		cudaEventElapsedTime(&(this->c_transferToDevice), this->start,this->stop);
 }
 
 template<class T>
@@ -103,9 +91,6 @@ void CompressedPackage<T>::c_runAlgorithm(){
 
 			// initialize block dimensions
 			dim3 blockSize = dim3(32, 32, 1);
-			// restart time measuring
-			cudaEventCreate(&(this->start));
-			cudaEventRecord(this->start,0);
 
 			// call compression kernel, merges words within a block
 			gpu_compressData<T><<<this->blockCount, blockSize>>>(this->data_gpu, this->compressed_gpu, this->blockCounts_gpu, this->size);
@@ -149,21 +134,11 @@ void CompressedPackage<T>::c_runAlgorithm(){
 			}
 			// call merge kernel
 			gpu_moveData<T><<<this->blockCount, blockSize>>>(this->compressed_gpu, this->finalOutput_gpu, this->blockCounts_gpu);
-
-			// get compression time
-			cudaEventCreate(&(this->stop));
-			cudaEventRecord(this->stop,0);
-			cudaEventSynchronize(this->stop);
-			cudaEventElapsedTime(&(this->c_compression), this->start, this->stop);
 }
 
 template<class T>
 void CompressedPackage<T>::c_copyFromDevice(){
 	// -- Move decompressed data from device to host --
-
-		// restart time measuring
-		cudaEventCreate(&(this->start));
-		cudaEventRecord(this->start,0);
 
 		// allocate memory for results
 		this->compressedData = (unsigned int*)malloc(sizeof(int) * this->compressedSize);
@@ -185,20 +160,11 @@ void CompressedPackage<T>::c_cleanup(){
 }
 
 template<class T>
-void CompressedPackage<T>::c_getStats(){
-		// get transfer time
-		cudaEventCreate(&(this->stop));
-		cudaEventRecord(this->stop,0);
-		cudaEventSynchronize(this->stop);
-		cudaEventElapsedTime(&(this->c_transferFromDevice), this->start, this->stop);
-}
-
-template<class T>
 bool CompressedPackage<T>::performAssert(){
 	if(this->decompressedSize == this->size){
 		ASSERT(this->decompressedData, this->data, this->size);
 	}
-	return false;
+return false;
 };
 
 template<class T>

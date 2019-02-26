@@ -23,6 +23,18 @@ PackageBase::~PackageBase() {
 	// TODO Auto-generated destructor stub
 }
 
+void PackageBase::startTimer(){
+	cudaEventCreate(&(this->start));
+	cudaEventRecord(this->start,0);
+}
+
+void PackageBase::getTimerMeasurement(float* pOutVal){
+	cudaEventCreate(&(this->stop));
+	cudaEventRecord(this->stop,0);
+	cudaEventSynchronize(this->stop);
+	cudaEventElapsedTime(pOutVal, this->start,this->stop);
+}
+
 void PackageBase::c_initializeVariables(unsigned int* in_data){
 
 	this->c_compression = 0;
@@ -42,11 +54,48 @@ void PackageBase::compressData(unsigned int* in_data, unsigned long long int in_
 		this->compressedData = NULL;
 	}
 	// template method
+	// start measuring time
+	// cudaEventCreate(&(this->start));
+	// cudaEventRecord(this->start,0);
+	this->startTimer();
+
 	this->c_initializeVariables(in_data);
 	this->c_allocateMemory();
 	this->c_copyToDevice();
+
+	// get transfer and allocation time
+	// cudaEventCreate(&(this->stop));
+	// cudaEventRecord(this->stop,0);
+	// cudaEventSynchronize(this->stop);
+	// cudaEventElapsedTime(&(this->c_transferToDevice), this->start,this->stop);
+	this->getTimerMeasurement(&(this->c_transferToDevice));
+	// restart time measuring
+	// cudaEventCreate(&(this->start));
+	// cudaEventRecord(this->start,0);
+	this->startTimer();
+
 	this->c_runAlgorithm();
+
+	// get compression time
+	// cudaEventCreate(&(this->stop));
+	// cudaEventRecord(this->stop,0);
+	// cudaEventSynchronize(this->stop);
+	// cudaEventElapsedTime(&(this->c_compression), this->start, this->stop);
+	this->getTimerMeasurement(&(this->c_compression));
+	// restart time measuring
+	// cudaEventCreate(&(this->start));
+	// cudaEventRecord(this->start,0);
+	this->startTimer();
+
 	this->c_copyFromDevice();
+	this->c_cleanup();
+
+		// get transfer time
+	// cudaEventCreate(&(this->stop));
+	// cudaEventRecord(this->stop,0);
+	// cudaEventSynchronize(this->stop);
+	// cudaEventElapsedTime(&(this->c_transferFromDevice), this->start, this->stop);
+	this->getTimerMeasurement(&(this->c_transferFromDevice));
 }
 
 

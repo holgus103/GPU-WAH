@@ -36,7 +36,6 @@ public:
 	virtual void c_runAlgorithm();
 	virtual void c_copyFromDevice();
 	virtual void c_cleanup();
-	virtual void c_getStats();
 	virtual void d_initializeVariables();
 	virtual void d_allocateMemory();
 	virtual void d_copyToDevice();
