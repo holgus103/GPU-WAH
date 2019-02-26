@@ -127,7 +127,7 @@ unsigned int* compress(
 	cudaEventRecord(start,0);
 
 	// call compression kernel, merges words within a block
-	gpu_compressData<T><<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, dataSize);
+	regular_kernels::gpu_compressData<T><<<blockCount,blockSize>>>(data_gpu, compressed_gpu, blockCounts_gpu, dataSize);
 
 	// remove unnecessary data
 	cudaFree((void*)data_gpu);
@@ -164,7 +164,7 @@ unsigned int* compress(
 		return NULL;
 	}
 	// call merge kernel
-	gpu_moveData<T><<<blockCount, blockSize>>>(compressed_gpu, finalOutput_gpu, blockCounts_gpu);
+	regular_kernels::gpu_moveData<T><<<blockCount, blockSize>>>(compressed_gpu, finalOutput_gpu, blockCounts_gpu);
 
 	// get compression time
 	cudaEventCreate(&stop);

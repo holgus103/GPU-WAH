@@ -93,7 +93,7 @@ void CompressedPackage<T>::c_runAlgorithm(){
 			dim3 blockSize = dim3(32, 32, 1);
 
 			// call compression kernel, merges words within a block
-			gpu_compressData<T><<<this->blockCount, blockSize>>>(this->data_gpu, this->compressed_gpu, this->blockCounts_gpu, this->size);
+			regular_kernels::gpu_compressData<T><<<this->blockCount, blockSize>>>(this->data_gpu, this->compressed_gpu, this->blockCounts_gpu, this->size);
 
 			// remove unnecessary data
 			cudaFree((void*)this->data_gpu);
@@ -133,7 +133,7 @@ void CompressedPackage<T>::c_runAlgorithm(){
 				return;
 			}
 			// call merge kernel
-			gpu_moveData<T><<<this->blockCount, blockSize>>>(this->compressed_gpu, this->finalOutput_gpu, this->blockCounts_gpu);
+			regular_kernels::gpu_moveData<T><<<this->blockCount, blockSize>>>(this->compressed_gpu, this->finalOutput_gpu, this->blockCounts_gpu);
 }
 
 template<class T>
@@ -205,7 +205,7 @@ void CompressedPackage<T>::d_runAlgorithm(){
 	// -- Decompress data --
 
 	// get blocked sizes of all words in the compressed file
-	gpu_getCounts<T><<<this->blockCount,blockDim>>>(this->data_gpu, this->counts_gpu, this->compressedSize);
+	regular_kernels::gpu_getCounts<T><<<this->blockCount,blockDim>>>(this->data_gpu, this->counts_gpu, this->compressedSize);
 
 	// size of the last block
 	T lastBlockSize;
@@ -239,7 +239,7 @@ void CompressedPackage<T>::d_runAlgorithm(){
 	cudaMalloc((void**)&(this->result_gpu), sizeof(int) * outputSize);
 
 	// decompress the words
-	gpu_decompressWords<T><<<this->blockCount,blockDim>>>(this->data_gpu, this->counts_gpu, this->result_gpu, this->compressedSize);
+	regular_kernels::gpu_decompressWords<T><<<this->blockCount,blockDim>>>(this->data_gpu, this->counts_gpu, this->result_gpu, this->compressedSize);
 
 	// free data and block offsets
 	cudaFree(this->data_gpu);
@@ -254,7 +254,7 @@ void CompressedPackage<T>::d_runAlgorithm(){
 	// allocate memory for final output data
 	cudaMalloc((void**)&(this->finalOutput_gpu), sizeof(int)*outputSize);
 	// convert from 31 bit words to integers
-	gpu_mergeWords<T><<<blockCount,blockDim>>>(this->result_gpu, this->finalOutput_gpu, outputSize);
+	regular_kernels::gpu_mergeWords<T><<<blockCount,blockDim>>>(this->result_gpu, this->finalOutput_gpu, outputSize);
 }
 
 template<class T>

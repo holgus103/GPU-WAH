@@ -64,7 +64,7 @@ unsigned int* decompress(
 // -- Decompress data --
 
 	// get blocked sizes of all words in the compressed file
-	gpu_getCounts<T><<<blockCount,blockDim>>>(data_gpu, counts_gpu, dataSize);
+	regular_kernels::gpu_getCounts<T><<<blockCount,blockDim>>>(data_gpu, counts_gpu, dataSize);
 
 	// size of the last block
 	T lastBlockSize;
@@ -98,7 +98,7 @@ unsigned int* decompress(
 	cudaMalloc((void**)&result_gpu, sizeof(int) * outputSize);
 
 	// decompress the words
-	gpu_decompressWords<T><<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, dataSize);
+	regular_kernels::gpu_decompressWords<T><<<blockCount,blockDim>>>(data_gpu, counts_gpu, result_gpu, dataSize);
 
 	// free data and block offsets
 	cudaFree(data_gpu);
@@ -113,7 +113,7 @@ unsigned int* decompress(
 	// allocate memory for final output data
 	cudaMalloc((void**)&finalOutput_gpu, sizeof(int)*outputSize);
 	// convert from 31 bit words to integers
-	gpu_mergeWords<T><<<blockCount,blockDim>>>(result_gpu, finalOutput_gpu, outputSize);
+	regular_kernels::gpu_mergeWords<T><<<blockCount,blockDim>>>(result_gpu, finalOutput_gpu, outputSize);
 
 // -- Cleanup after decompression --
 
