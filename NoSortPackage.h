@@ -15,12 +15,15 @@ private:
 	T* orderingArray;
 	T* orderingArray_gpu;
     T* sizeCounter_gpu;
+
 public:
 	NoSortPackage();
 	virtual ~NoSortPackage();
 	virtual void c_allocateMemory();
 	virtual void c_runAlgorithm();
 	virtual void c_cleanup();
+	virtual void d_allocateMemory();
+	virtual void d_copyToDevice();
 	virtual void d_runAlgorithm();
     T* getOrderingArray();
     T getOrderingLength();

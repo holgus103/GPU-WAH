@@ -406,13 +406,14 @@ namespace regular_kernels{
 
 
 namespace no_sorting {
+	template<class T>
 	__global__ void compressData(
 			unsigned int* data,
 			unsigned int* output,
-			unsigned long long int* blockCounts,
-			unsigned long long int* orderingArray,
-			unsigned long long int* sizeCounter_gpu,
-			int dataSize) {
+			T* blockCounts,
+			T* orderingArray,
+			T* sizeCounter_gpu,
+			T dataSize) {
 		// count of words for every warp
 		__shared__ int counts[32];
 		// length of the last word in a warp
@@ -424,12 +425,12 @@ namespace no_sorting {
 		// array indicating whether the last thread of a warp has been merged
 		__shared__ bool merged[32];
 		// real block offset using atomic add
-		__shared__ int outputOffset;
+		__shared__ T outputOffset;
 
 
 		// get thread id
 		int id = threadIdx.x;
-		unsigned long long int id_global = blockIdx.x * (31*32) + threadIdx.y *31 + id;
+		T id_global = blockIdx.x * (31*32) + threadIdx.y *31 + id;
 		unsigned int word = 0;
 		// retrieve word, only first 31 threads
 		if(id_global > dataSize) return;
@@ -615,9 +616,26 @@ namespace no_sorting {
 
 	}
 
-	__global__ void getCounts(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize){
+	template __global__ void compressData<unsigned long long int>(
+			unsigned int* data,
+			unsigned int* output,
+			unsigned long long int* blockCounts,
+			unsigned long long int* orderingArray,
+			unsigned long long int* sizeCounter_gpu,
+			unsigned long long int dataSize);
+
+	template __global__ void compressData<unsigned int>(
+			unsigned int* data,
+			unsigned int* output,
+			unsigned int* blockCounts,
+			unsigned int* orderingArray,
+			unsigned int* sizeCounter_gpu,
+			unsigned int dataSize);
+
+	template<class T>
+	__global__ void getCounts(unsigned int* data_gpu, T* counts_gpu, T dataSize){
 		// get global id
-		int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
+		T globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 		// is within the data range
 		if(globalId < dataSize){
 			// get word
@@ -635,11 +653,22 @@ namespace no_sorting {
 
 	}
 
-	__global__ void decompressWords(unsigned int* data_gpu, unsigned int* result_gpu, unsigned long long int* offsets, unsigned long long int* blockSizes, unsigned int blocks, unsigned long long int dataSize){
+	template __global__ void getCounts<unsigned int>(unsigned int* data_gpu, unsigned int* counts_gpu, unsigned int dataSize);
+	template __global__ void getCounts<unsigned long long int>(unsigned int* data_gpu, unsigned long long int* counts_gpu, unsigned long long int dataSize);
+
+
+	template<class T>
+	__global__ void decompressWords(
+			unsigned int* data_gpu,
+			unsigned int* result_gpu,
+			T* offsets,
+			T* blockSizes,
+			T blocks,
+			T dataSize){
 
 		__shared__ int blockCounts[32];
-		__shared__ unsigned long long int blockStart;
-		__shared__ unsigned long long int blockEnd;
+		__shared__ T blockStart;
+		__shared__ T blockEnd;
 
 		// get global id
 		unsigned int blockId = blockIdx.x;
@@ -654,12 +683,12 @@ namespace no_sorting {
 		if(threadIdx.y == 0){
 			blockCounts[threadIdx.x] = 0;
 		}
-		unsigned long long int globalId = blockStart + localId;
+		T globalId = blockStart + localId;
 
 		if(globalId < blockStart || globalId >= blockEnd) return;
 
 		unsigned int word = data_gpu[globalId];
-		unsigned long long int offset = 32*32*blockId;
+		T offset = 32*32*blockId;
 		// out of range
 		int count = (BIT31 & word) > 0 ? (word & (BIT30 - 1)) : 1;
 		// is not the last working warp in the block
@@ -720,9 +749,26 @@ namespace no_sorting {
 
 	}
 
-	__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize){
+	template __global__ void decompressWords<unsigned int>(
+			unsigned int* data_gpu,
+			unsigned int* result_gpu,
+			unsigned int* offsets,
+			unsigned int* blockSizes,
+			unsigned int blocks,
+			unsigned int dataSize);
+
+	template __global__ void decompressWords<unsigned long long int>(
+			unsigned int* data_gpu,
+			unsigned int* result_gpu,
+			unsigned long long int* offsets,
+			unsigned long long int* blockSizes,
+			unsigned long long int blocks,
+			unsigned long long int dataSize);
+
+	template<class T>
+	__global__ void mergeWords(unsigned int* result_gpu, unsigned int* finalOutput_gpu, T dataSize){
 		// get global id
-		unsigned long long int globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
+		T globalId = blockIdx.x * (blockDim.x * blockDim.y) + blockDim.x * threadIdx.y + threadIdx.x;
 		int id = threadIdx.x;
 		if(globalId >= dataSize) return;
 		unsigned int word = result_gpu[globalId];
@@ -734,9 +780,10 @@ namespace no_sorting {
 	//			printf("thread id %d", globalId);
 	//		}
 		}
-
-
 	}
+
+	template __global__ void mergeWords<unsigned int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned int dataSize);
+	template __global__ void mergeWords<unsigned long long int>(unsigned int* result_gpu, unsigned int* finalOutput_gpu, unsigned long long int dataSize);
 
 	__global__ void reoderKernel(
 			unsigned long long int* blockSizes,

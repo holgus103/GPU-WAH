@@ -6,6 +6,7 @@
  */
 
 #include "NoSortPackage.h"
+#include "CompressedPackage.h"
 #include "compress.h"
 #include "kernels.h"
 #include "cuda_runtime.h"
@@ -50,7 +51,7 @@ template<class T>
 void NoSortPackage<T>::c_runAlgorithm(){
 		dim3 blockSize = dim3(32, 32, 1);
 		// call compression kernel
-		//compressData<<<this->blockCount,blockSize>>>(this->data_gpu, this->compressed_gpu, this->blockCounts_gpu, this->orderArray_gpu, this->sizeCounter_gpu, this->size);
+		no_sorting::compressData<<<this->blockCount,blockSize>>>(this->data_gpu, this->compressed_gpu, this->blockCounts_gpu, this->orderingArray_gpu, this->sizeCounter_gpu, this->size);
 
 		// remove unnecessary data
 		cudaFree((void*)this->data_gpu);
@@ -95,22 +96,28 @@ void NoSortPackage<T>::c_cleanup(){
 	if(this->sizeCounter_gpu) cudaFree(this->sizeCounter_gpu);
 }
 
+template<class T>
+void NoSortPackage<T>::d_allocateMemory(){
+	CompressedPackage<T>::d_allocateMemory();
+	if(cudaSuccess != cudaMalloc((void**)&(this->orderingArray_gpu), sizeof(T)* this->blockCount)){
+		std::cout << "Decomp: Could not allocate space for offset array" << std::endl;
+	}
+}
+
+template<class T>
+void NoSortPackage<T>::d_copyToDevice(){
+	// -- Data transfer --
+	CompressedPackage<T>::d_copyToDevice();
+	cudaMemcpy(this->orderingArray_gpu, this->orderingArray, sizeof(T)*this->blockCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(this->counts_gpu, this->blockSizes, sizeof(T) * this->blockCount, cudaMemcpyHostToDevice);
+
+}
 
 template<class T>
 void NoSortPackage<T>::d_runAlgorithm(){
 	dim3 blockDim(32, 32);
 	// get blocked sizes
-	//getCounts<<<blockCount,blockDim>>>(this->data_gpu, this->blockCounts_gpu, this->compressedSize);
-	unsigned long long int lastBlockSize;
-	cudaMemcpy(&lastBlockSize, this->blockCounts_gpu  + (this->compressedSize - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
-	// scan block sizes
-	thrust::device_ptr<T> countsPtr(this->blockCounts_gpu);
-	// get counts
-	thrust::exclusive_scan(countsPtr, countsPtr + this->compressedSize, countsPtr);
-	unsigned long long int lastOffset;
-//	thrust::inclusive_scan(counts_cpu, counts_cpu + dataSize, counts_cpu);
-	cudaMemcpy(&lastOffset, this->blockCounts_gpu + (this->compressedSize - 1), sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
-	unsigned long long int outputSize = lastBlockSize + lastOffset;
+	unsigned long long int outputSize = 1024*this->blockCount;
 	unsigned long long int realSize = 31*outputSize;
 
 	if(realSize % 32 > 0){
@@ -121,20 +128,30 @@ void NoSortPackage<T>::d_runAlgorithm(){
 		realSize /=32;
 	}
 	this->decompressedSize = realSize;
-//	free(counts_cpu);
-	cudaMalloc((void**)&(this->result_gpu), sizeof(int) * this->decompressedSize);
+	if(cudaSuccess != cudaMalloc((void**)&(this->result_gpu), sizeof(int) * outputSize)){
+		std::cout << "Decomp: Could not allocate space for results array" << std::endl;
+	}
 
-	//decompressWords<<<blockCount,blockDim>>>(this->data_gpu, this->blockCounts_gpu, this->result_gpu, this->compressedSize);
+	no_sorting::decompressWords<<<this->blockCount,blockDim>>>(this->data_gpu, this->result_gpu, this->orderingArray_gpu, this->counts_gpu, this->blockCount, this->compressedSize);
 	cudaFree(this->data_gpu);
+	cudaFree(this->orderingArray_gpu);
 	cudaFree(this->counts_gpu);
 
 	this->blockCount = outputSize / 1024;
+
 	if(this->compressedSize % 1024 > 0){
 		this->blockCount++;
 	}
 
+	cudaError_t res = cudaMalloc((void**)&(this->finalOutput_gpu), sizeof(int)*outputSize);
+	if(cudaSuccess != res){
+		std::cout << "Error" << std::endl;
+		std::cout << cudaGetErrorName(res) << std::endl;
+		std::cout << "Decomp: Could not allocate space for final output array" << std::endl;
+
+}
 	cudaMalloc((void**)&this->finalOutput_gpu, sizeof(int)*this->decompressedSize);
-	//mergeWords<<<blockCount,blockDim>>>(this->result_gpu, this->finalOutput_gpu, this->decompressedSize);
+	no_sorting::mergeWords<<<this->blockCount,blockDim>>>(this->result_gpu, this->finalOutput_gpu, this->decompressedSize);
 	cudaFree(this->result_gpu);
 }
 
@@ -386,4 +403,4 @@ T* NoSortPackage<T>::getBlockSizes(){
 //}
 
 template class NoSortPackage<unsigned long long int>;
-template class NoSortPackage<unsigned int>;
+//template class NoSortPackage<unsigned int>;

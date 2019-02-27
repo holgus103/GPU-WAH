@@ -26,40 +26,44 @@ namespace regular_kernels{
 
 
 namespace no_sorting{
+template<class T>
 	__global__ void compressData(
 			unsigned int* data_gpu,
 			unsigned int* compressed_gpu,
-			unsigned long long int* blockCounts_gpu,
-			unsigned long long int* orderingArray_gpu,
-			unsigned long long int* sizeCounter_gpu,
-			int dataSize
+			T* blockCounts_gpu,
+			T* orderingArray_gpu,
+			T* sizeCounter_gpu,
+			T dataSize
 			);
-
+template<class T>
 	__global__ void moveData(
 			unsigned int* initialOutput_gpu,
 			unsigned int* finalOutput_gpu,
-			unsigned long long int* blockCounts_gpu
+			T* blockCounts_gpu
 			);
 
+template<class T>
 	__global__ void getCounts(
 			unsigned int* data_gpu,
-			unsigned long long int* counts_gpu,
-			unsigned long long int dataSize
+			T* counts_gpu,
+			T dataSize
 			);
 
+template<class T>
 	__global__ void decompressWords(
 			unsigned int* data_gpu,
 			unsigned int* result_gpu,
-			unsigned long long int* offsets,
-			unsigned long long int* blockSizes,
-			unsigned int blocks,
-			unsigned long long int dataSize
+			T* offsets,
+			T* blockSizes,
+			T blocks,
+			T dataSize
 			);
 
+template<class T>
 	__global__ void mergeWords(
 			unsigned int* result_gpu,
 			unsigned int* finalOutput_gpu,
-			unsigned long long int dataSize
+			T dataSize
 			);
 
 	__global__ void reoderKernel(
