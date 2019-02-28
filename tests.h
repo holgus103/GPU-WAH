@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-
+#include "PackageBase.h"
 #define ASSERT_MODULO(RES, EX, LEN, MODULO)	\
 for (int i = 0; i < LEN; i++) { \
 	if (RES[i] != EX[i % MODULO]) { \
@@ -35,8 +35,7 @@ bool blockMergeFinalLiterals();
 bool blockMergeWanderingLiterals();
 bool multiBlockTest();
 
-template<class T>
-bool compressAndDecompressTest();
+bool compressAndDecompressTest(PackageBase* package);
 
 template<class T>
 bool randomDataTest();

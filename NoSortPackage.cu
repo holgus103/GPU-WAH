@@ -7,7 +7,6 @@
 
 #include "NoSortPackage.h"
 #include "CompressedPackage.h"
-#include "compress.h"
 #include "kernels.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -403,4 +402,4 @@ T* NoSortPackage<T>::getBlockSizes(){
 //}
 
 template class NoSortPackage<unsigned long long int>;
-//template class NoSortPackage<unsigned int>;
+template class NoSortPackage<unsigned int>;

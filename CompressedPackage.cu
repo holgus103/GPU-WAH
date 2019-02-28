@@ -10,7 +10,6 @@
 #include <thrust/remove.h>
 #include <thrust/device_ptr.h>
 #include "timeMeasuring.h"
-#include "decompress.h"
 #include <thrust/scan.h>
 
 template<class T>

@@ -1,12 +1,11 @@
 
-#include "compress.h"
-#include "decompress.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "tests.h"
 #include <fstream>
 #include <iostream>
-
+#include "RegularPackage.h"
+#include "NoSortPackage.h"
 // runs tests
 int main()
 {
@@ -18,8 +17,17 @@ int main()
 //	blockMergeFinalLiterals();
 //	blockMergeWanderingLiterals();
 //	multiBlockTest();
-	compressAndDecompressTest<unsigned long long int>();
-	compressAndDecompressTest<unsigned int>();
+	RegularPackage<unsigned int> intPackage = RegularPackage<unsigned int>();
+	compressAndDecompressTest(&intPackage);
+
+	RegularPackage<unsigned long long int> llintPackage = RegularPackage<unsigned long long int>();
+	compressAndDecompressTest(&llintPackage);
+
+	NoSortPackage<unsigned int> intNoSortPackage = NoSortPackage<unsigned int>();
+	compressAndDecompressTest(&intPackage);
+
+	NoSortPackage<unsigned long long int> llintNoSortPackage = NoSortPackage<unsigned long long int>();
+	compressAndDecompressTest(&llintPackage);
 //	zerosTest();
 
 //	randomDataTest<unsigned long long int>();

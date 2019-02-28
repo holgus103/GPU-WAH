@@ -1,6 +1,4 @@
 
-#include "compress.h"
-#include "decompress.h"
 #include "tests.h"
 #include "const.h"
 #include <stdlib.h>
@@ -239,8 +237,8 @@ void initializeTestData(int baseIndex, unsigned int* arr){
 //
 //TEST_END
 
-template<class T>
-TEST_DEC(compressAndDecompressTest)
+bool compressAndDecompressTest(PackageBase* package){
+	std::cout << compressAndDecompressTest << ": ";
 	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
 	int blocks = 1024*64;
 	int size = 31*32*blocks;
@@ -248,13 +246,13 @@ TEST_DEC(compressAndDecompressTest)
 	for(int j = 0; j < blocks; j++){
 		generateWanderingTestData(data, j*31*32);
 	}
-	RegularPackage<T> package = RegularPackage<T>();
+	//RegularPackage<T> package = RegularPackage<T>();
 	//T compressedSize, decompressedSize;
-	package.compressData(data, size);
+	package->compressData(data, size);
 	//unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	package.decompressData();
+	package->decompressData();
 	//unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-	package.performAssert();
+	package->performAssert();
 	//printf("original size: %d, decompressed size: %d");
 	//if(decompressedSize != size){
 	//	printf("decompressed size does not match");
@@ -263,7 +261,7 @@ TEST_DEC(compressAndDecompressTest)
 	//ASSERT(decomp, data, decompressedSize)
 	free(data);
 
-	PackageBase::Times t = package.getTimes();
+	PackageBase::Times t = package->getTimes();
 	printf("Compression \n");
 	printf("Transfer to device: %f \n", t.c_transferToDevice);
 	printf("Compression: %f \n", t.c_compression);
@@ -274,10 +272,6 @@ TEST_DEC(compressAndDecompressTest)
 	printf("Compression: %f \n", t.d_compression);
 	printf("Transfer from device: %f \n", t.d_transferFromDevice);
 TEST_END
-
-template bool compressAndDecompressTest<unsigned int>();
-
-template bool compressAndDecompressTest<unsigned long long int>();
 
 //TEST_DEC(zerosTest)
 //	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
@@ -297,26 +291,26 @@ template bool compressAndDecompressTest<unsigned long long int>();
 //TEST_END
 //
 
-template<class T>
-TEST_DEC(randomDataTest)
-	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
-	int blocks = 1024*128;
-	int size = 31*32*blocks; //16MB of ints
-	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
-	generateRandomData(data, size, (1 << 4));
-//	std::ofstream outFile;
-//	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
-//	outFile.write((char*)data, sizeof(int)*size);
-//	outFile.close();
-	T compressedSize, decompressedSize;
-	unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
-	unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
-	std::cout << size << std::endl;
-	std::cout << compressedSize << std::endl;
-	std::cout << decompressedSize <<std::endl;
-	ASSERT(decomp, data, size)
-	//free(decomp);
-TEST_END
+//template<class T>
+//TEST_DEC(randomDataTest)
+//	float c_transferToDevice, c_transferFromDevice, c_compression, d_transferToDevice, d_transferFromDevice, d_compression;
+//	int blocks = 1024*128;
+//	int size = 31*32*blocks; //16MB of ints
+//	unsigned int* data = (unsigned int*)malloc(sizeof(int) * size);
+//	generateRandomData(data, size, (1 << 4));
+////	std::ofstream outFile;
+////	outFile.open("randomDataTest", std::ios::out | std::ios::binary);
+////	outFile.write((char*)data, sizeof(int)*size);
+////	outFile.close();
+//	T compressedSize, decompressedSize;
+//	unsigned int* res = compress<T>(data, size, &compressedSize, &c_transferToDevice, &c_compression, &c_transferFromDevice);
+//	unsigned int* decomp = decompress<T>(res, compressedSize, &decompressedSize, &d_transferToDevice, &d_compression, &d_transferFromDevice);
+//	std::cout << size << std::endl;
+//	std::cout << compressedSize << std::endl;
+//	std::cout << decompressedSize <<std::endl;
+//	ASSERT(decomp, data, size)
+//	//free(decomp);
+//TEST_END
 
-template bool randomDataTest<unsigned long long int>();
-template bool randomDataTest<unsigned int>();
+//template bool randomDataTest<unsigned long long int>();
+//template bool randomDataTest<unsigned int>();

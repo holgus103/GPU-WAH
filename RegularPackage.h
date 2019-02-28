@@ -17,8 +17,6 @@ protected:
 public:
 	RegularPackage();
 	virtual ~RegularPackage();
-	virtual void compressData(unsigned int* p_data, unsigned long long int p_size);
-	virtual void decompressData();
 
 
 };
