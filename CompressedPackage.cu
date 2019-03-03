@@ -25,9 +25,9 @@ CompressedPackage<T>::~CompressedPackage()
 };
 
 template<class T>
-void CompressedPackage<T>::c_initializeVariables(unsigned int* in_data){
-	PackageBase::c_initializeVariables(in_data);
-
+void CompressedPackage<T>::c_initializeVariables(unsigned int* in_data, unsigned long long int in_size){
+	PackageBase::c_initializeVariables(in_data, in_size);
+	this->size = in_size;
 	// -- Variable initialization --
 	// calculate the number of blocks necessary
 	this->blockCount = this->size / (31*32);
@@ -160,6 +160,8 @@ void CompressedPackage<T>::c_cleanup(){
 
 template<class T>
 bool CompressedPackage<T>::performAssert(){
+	std::cout << this->size << std::endl;
+	std::cout << this->decompressedSize << std::endl;
 	if(this->decompressedSize == this->size){
 		ASSERT(this->decompressedData, this->data, this->size);
 	}
@@ -168,9 +170,6 @@ return false;
 
 template<class T>
 void CompressedPackage<T>::d_initializeVariables(){
-	// start measuring time
-	CREATE_TIMER
-	START_TIMER
 
 	this->blockCount = this->compressedSize / 1024;
 
@@ -191,10 +190,6 @@ template<class T>
 void CompressedPackage<T>::d_copyToDevice(){
 	// -- Data transfer --
 	cudaMemcpy(this->data_gpu, this->compressedData, sizeof(int)*this->compressedSize, cudaMemcpyHostToDevice);
-
-	STOP_TIMER
-	GET_RESULT(this->d_transferToDevice)
-	START_TIMER
 }
 
 template<class T>
@@ -260,10 +255,6 @@ template<class T>
 void CompressedPackage<T>::d_copyFromDevice(){
 		// free incomplete array
 		cudaFree(result_gpu);
-
-		STOP_TIMER
-		GET_RESULT(this->d_compression)
-		START_TIMER
 	
 		// allocate host array and copy final result
 		this->decompressedData = (unsigned int*)malloc(sizeof(int) * this->decompressedSize);
@@ -276,13 +267,6 @@ void CompressedPackage<T>::d_cleanup(){
 	// free device result array
 	cudaFree(this->finalOutput_gpu);
 }
-
-template<class T>
-void CompressedPackage<T>::d_getStats(){
-	STOP_TIMER
-	GET_RESULT(this->d_transferFromDevice)
-}
-
 
 template class CompressedPackage<unsigned long long int>;
 template class CompressedPackage<unsigned int>;

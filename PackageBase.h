@@ -26,7 +26,7 @@ protected:
 	unsigned int* data;
 	unsigned int* compressedData;
 	unsigned int* decompressedData;
-	virtual void c_initializeVariables(unsigned int* in_data);
+	virtual void c_initializeVariables(unsigned int* in_data, unsigned long long int size);
 	virtual void c_allocateMemory() = 0;
 	virtual void c_copyToDevice() = 0;
 	virtual void c_runAlgorithm() = 0;
@@ -37,7 +37,6 @@ protected:
 	virtual void d_copyToDevice() = 0;
 	virtual void d_runAlgorithm() = 0;
 	virtual void d_copyFromDevice() = 0;
-	virtual void d_getStats() = 0;
 public:
 
 	struct Times{

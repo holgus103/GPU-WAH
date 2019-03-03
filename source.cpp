@@ -17,18 +17,21 @@ int main()
 //	blockMergeFinalLiterals();
 //	blockMergeWanderingLiterals();
 //	multiBlockTest();
-	RegularPackage<unsigned int> intPackage = RegularPackage<unsigned int>();
-	compressAndDecompressTest(&intPackage);
 
-	RegularPackage<unsigned long long int> llintPackage = RegularPackage<unsigned long long int>();
-	compressAndDecompressTest(&llintPackage);
-
+//	std::cout << "Starting testing" <<std::endl;
+//	std::cout << "regular int" <<std::endl;
+//	RegularPackage<unsigned int> intPackage = RegularPackage<unsigned int>();
+//	compressAndDecompressTest(&intPackage);
+//	std::cout << "regular long long" <<std::endl;
+//	RegularPackage<unsigned long long int> llintPackage = RegularPackage<unsigned long long int>();
+//	compressAndDecompressTest(&llintPackage);
+	std::cout << "no sort int" <<std::endl;
 	NoSortPackage<unsigned int> intNoSortPackage = NoSortPackage<unsigned int>();
-	compressAndDecompressTest(&intPackage);
-
+	compressAndDecompressTest(&intNoSortPackage);
+	std::cout << "no sort long long" <<std::endl;
 	NoSortPackage<unsigned long long int> llintNoSortPackage = NoSortPackage<unsigned long long int>();
-	compressAndDecompressTest(&llintPackage);
-//	zerosTest();
+	compressAndDecompressTest(&llintNoSortPackage);
+////	zerosTest();
 
 //	randomDataTest<unsigned long long int>();
 //	randomDataTest<unsigned int>();

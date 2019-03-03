@@ -30,7 +30,7 @@ public:
 
 	CompressedPackage();
 	virtual ~CompressedPackage();
-	virtual void c_initializeVariables(unsigned int* in_data);
+	virtual void c_initializeVariables(unsigned int* in_data, unsigned long long int in_size);
 	virtual void c_allocateMemory();
 	virtual void c_copyToDevice();
 	virtual void c_runAlgorithm();
@@ -42,9 +42,7 @@ public:
 	virtual void d_runAlgorithm();
 	virtual void d_copyFromDevice();
 	virtual void d_cleanup();
-	virtual void d_getStats();
 	bool performAssert();
-	//void compressData(unsigned int* p_data, unsigned long long int p_size);
 };
 
 #endif /* COMPRESSOR_H_ */

@@ -35,7 +35,7 @@ void PackageBase::getTimerMeasurement(float* pOutVal){
 	cudaEventElapsedTime(pOutVal, this->start,this->stop);
 }
 
-void PackageBase::c_initializeVariables(unsigned int* in_data){
+void PackageBase::c_initializeVariables(unsigned int* in_data, unsigned long long int in_size){
 
 	this->c_compression = 0;
 	this->c_transferFromDevice = 0;
@@ -59,7 +59,7 @@ void PackageBase::compressData(unsigned int* in_data, unsigned long long int in_
 	// cudaEventRecord(this->start,0);
 	this->startTimer();
 
-	this->c_initializeVariables(in_data);
+	this->c_initializeVariables(in_data, in_size);
 	this->c_allocateMemory();
 	this->c_copyToDevice();
 
@@ -105,11 +105,17 @@ void PackageBase::decompressData(){
 		this->decompressedData = NULL;
 	}
 	// template method
+	this->startTimer();
 	this->d_initializeVariables();
 	this->d_allocateMemory();
 	this->d_copyToDevice();
+	this->getTimerMeasurement(&(this->d_transferToDevice));
+	this->startTimer();
 	this->d_runAlgorithm();
+	this->getTimerMeasurement(&(this->d_compression));
+	this->startTimer();
 	this->d_copyFromDevice();
+	this->getTimerMeasurement(&(this->d_transferFromDevice));
 }
 
 unsigned int* PackageBase::getCompressed(){
