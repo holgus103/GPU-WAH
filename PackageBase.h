@@ -37,6 +37,7 @@ protected:
 	virtual void d_copyToDevice() = 0;
 	virtual void d_runAlgorithm() = 0;
 	virtual void d_copyFromDevice() = 0;
+	virtual void d_cleanup() = 0;
 public:
 
 	struct Times{
